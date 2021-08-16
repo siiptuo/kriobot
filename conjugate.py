@@ -88,6 +88,7 @@ def main():
             if stem:
                 data.append(wbi_datatype.MonolingualText(text=stem, prop_nr='P5187', language='sv'))
                 summary += ' and stem'
+            summary += ' [[User:Kriobot#Task_1|#task1]]'
 
             item = wbi_core.ItemEngine(item_id=lexeme, data=data)
             item.write(login_instance, edit_summary=summary)
