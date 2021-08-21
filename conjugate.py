@@ -15,6 +15,8 @@ def classify(conjugations):
     ('kall', '1')
     >>> classify(('stänga', 'stänger', 'stängde', 'stängt'))
     ('stäng', '2a')
+    >>> classify(('tända', 'tänder', 'tände', 'tänt'))
+    ('tänd', '2a')
     >>> classify(('läsa', 'läser', 'läste', 'läst'))
     ('läs', '2b')
     >>> classify(('sy', 'syr', 'sydde', 'sytt'))
@@ -24,13 +26,13 @@ def classify(conjugations):
     >>> classify(('göra', 'gör', 'gjorde', 'gjort'))
     (None, '4')
     '''
-    if all(conjugations[0][:-1] + suffix == c for c, suffix in zip(conjugations, ('a', 'ar', 'ade', 'at'))):
+    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('a', 'ar', 'ade', 'at'))):
         return (conjugations[0][:-1], '1')
-    if all(conjugations[0][:-1] + suffix == c for c, suffix in zip(conjugations, ('a', 'er', 'de', 't'))):
+    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('a', 'er', 'de', 't'))):
         return (conjugations[0][:-1], '2a')
-    if all(conjugations[0][:-1] + suffix == c for c, suffix in zip(conjugations, ('a', 'er', 'te', 't'))):
+    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('a', 'er', 'te', 't'))):
         return (conjugations[0][:-1], '2b')
-    if all(conjugations[0] + suffix == c for c, suffix in zip(conjugations, ('', 'r', 'dde', 'tt'))):
+    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('', 'r', 'dde', 'tt'))):
         return (conjugations[0], '3')
     return (None, '4')
 
