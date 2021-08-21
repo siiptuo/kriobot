@@ -61,6 +61,7 @@ def main():
           MINUS { ?lexeme wdt:P5186 [] }
         }
         GROUP BY ?lexeme ?form
+        LIMIT 100
         '''
     )
     for row in data['results']['bindings']:
@@ -77,10 +78,7 @@ def main():
             elif SUPINE_ID in features:
                 lexemes[lexeme][3] = conjugation
 
-    i = 0
     for lexeme, conjugations in lexemes.items():
-        if i > 50:
-            break
         if all(conjugations):
             stem, klass = classify(conjugations)
             logging.info(f'lexeme={lexeme} stem={stem} class={klass}')
@@ -94,8 +92,6 @@ def main():
 
             item = wbi_core.ItemEngine(item_id=lexeme, data=data)
             item.write(login_instance, edit_summary=summary)
-
-            i += 1
 
 if __name__ == '__main__':
     main()
