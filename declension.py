@@ -108,13 +108,11 @@ def main():
             ontolex:representation ?plural.
           FILTER(NOT EXISTS { ?lexeme wdt:P5911 []. })
         }
+        LIMIT 100
         '''
     )
 
-    i = 0
     for row in data['results']['bindings']:
-        if i > 50:
-            break
 
         lexeme = row['lexeme']['value'].removeprefix('http://www.wikidata.org/entity/')
         singular = row['singular']['value']
@@ -126,9 +124,7 @@ def main():
 
         data = [wbi_datatype.ItemID(value=DECLENSION_ID[klass], prop_nr='P5911')]
         item = wbi_core.ItemEngine(item_id=lexeme, data=data)
-        item.write(login_instance, edit_summary='add declension')
-
-        i += 1
+        item.write(login_instance, edit_summary='add declension [[User:Kriobot#Task_1|#task1]]')
 
 if __name__ == '__main__':
     main()
