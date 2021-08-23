@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from wikibaseintegrator import wbi_core, wbi_login, wbi_datatype, wbi_functions
+from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
+
+from common import create_login_instance
 
 FIFTH_DECLENSION_EXCEPTIONS = [('mus', 'möss'), ('gås', 'gäss'), ('man', 'män')]
 
@@ -93,7 +95,7 @@ DECLENSION_ID = {1: 'Q106602496', 2: 'Q106602498', 3: 'Q106602499', 4: 'Q1066025
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    login_instance = wbi_login.Login(user=os.environ['WIKIDATA_USERNAME'], pwd=os.environ['WIKIDATA_PASSWORD'])
+    login_instance = create_login_instance()
 
     data = wbi_functions.execute_sparql_query(
         '''

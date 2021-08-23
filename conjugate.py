@@ -4,10 +4,11 @@
 import csv
 import json
 import logging
-import os
 import urllib.request
 from collections import defaultdict
-from wikibaseintegrator import wbi_core, wbi_login, wbi_datatype, wbi_functions
+from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
+
+from common import create_login_instance
 
 def classify(conjugations):
     '''
@@ -47,7 +48,7 @@ SUPINE_ID = 'Q548470'
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    login_instance = wbi_login.Login(user=os.environ['WIKIDATA_USERNAME'], pwd=os.environ['WIKIDATA_PASSWORD'])
+    login_instance = create_login_instance()
 
     lexemes = defaultdict(lambda: [None, None, None, None])
     data = wbi_functions.execute_sparql_query(
