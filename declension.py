@@ -113,7 +113,6 @@ def main():
     )
 
     for row in data['results']['bindings']:
-
         lexeme = row['lexeme']['value'].removeprefix('http://www.wikidata.org/entity/')
         singular = row['singular']['value']
         plural = row['plural']['value']
