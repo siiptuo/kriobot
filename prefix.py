@@ -23,6 +23,8 @@ def main():
 
     login_instance = create_login_instance()
 
+    # Query lexemes matching the prefix. Lexemes that already combine other
+    # lexemes (P5238) are ignored.
     data = wbi_functions.execute_sparql_query(
         '''
         SELECT ?lexeme ?lemma WHERE {
