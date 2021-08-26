@@ -13,7 +13,8 @@ def query_lexeme(word):
         }}
         '''
     )
-    if len(data['results']['bindings']) == 0 or len(data['results']['bindings']) > 1:
+    # Check if no lexeme or multiple lexemes are found.
+    if len(data['results']['bindings']) != 1:
         return None
     return data['results']['bindings'][0]['lexeme']['value'].removeprefix('http://www.wikidata.org/entity/')
 
