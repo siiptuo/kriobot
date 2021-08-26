@@ -10,6 +10,81 @@ from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
 from common import create_login_instance
 
+def conjugate1(infinitive):
+    '''
+    >>> conjugate1('kalla')
+    ('kall', ('kalla', 'kallar', 'kallade', 'kallat'))
+    '''
+    stem = infinitive[:-1]
+    present = stem + 'ar'
+    preterite = stem + 'ade'
+    supine = stem + 'at'
+    return stem, (infinitive, present, preterite, supine)
+
+def conjugate2a(infinitive):
+    '''
+    >>> conjugate2a('stänga')
+    ('stäng', ('stänga', 'stänger', 'stängde', 'stängt'))
+    >>> conjugate2a('tända')
+    ('tänd', ('tända', 'tänder', 'tände', 'tänt'))
+    >>> conjugate2a('röra')
+    ('rör', ('röra', 'rör', 'rörde', 'rört'))
+    '''
+    if infinitive.endswith('ra'):
+        stem = infinitive[:-1]
+        present = stem
+    else:
+        stem = infinitive[:-1]
+        present = stem + 'er'
+    if stem.endswith('d'):
+        preterite = stem + 'e'
+    else:
+        preterite = stem + 'de'
+    if stem.endswith('d'):
+        supine = stem[:-1] + 't'
+    else:
+        supine = stem + 't'
+    return stem, (infinitive, present, preterite, supine)
+
+def conjugate2b(infinitive):
+    '''
+    >>> conjugate2b('läsa')
+    ('läs', ('läsa', 'läser', 'läste', 'läst'))
+    >>> conjugate2b('gifta')
+    ('gift', ('gifta', 'gifter', 'gifte', 'gift'))
+    '''
+    stem = infinitive[:-1]
+    present = stem + 'er'
+    if stem.endswith('t'):
+        preterite = stem + 'e'
+        supine = stem
+    else:
+        preterite = stem + 'te'
+        supine = stem + 't'
+    return stem, (infinitive, present, preterite, supine)
+
+def conjugate3(infinitive):
+    '''
+    >>> conjugate3('sy')
+    ('sy', ('sy', 'syr', 'sydde', 'sytt'))
+    '''
+    stem = infinitive
+    present = stem + 'r'
+    preterite = stem + 'dde'
+    supine = stem + 'tt'
+    return stem, (infinitive, present, preterite, supine)
+
+def conjugate(infinitive, group):
+    if group == '1':
+        return conjugate1(infinitive)
+    if group == '2a':
+        return conjugate2a(infinitive)
+    if group == '2b':
+        return conjugate2b(infinitive)
+    if group == '3':
+        return conjugate3(infinitive)
+    raise Exception(f'unsupported group: {group}')
+
 def classify(conjugations):
     '''
     >>> classify(('kalla', 'kallar', 'kallade', 'kallat'))
@@ -28,15 +103,13 @@ def classify(conjugations):
     (None, '4')
     >>> classify(('göra', 'gör', 'gjorde', 'gjort'))
     (None, '4')
+    >>> classify(('ha', 'har', 'hade', 'haft'))
+    (None, '4')
     '''
-    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('a', 'ar', 'ade', 'at'))):
-        return (conjugations[0][:-1], '1')
-    if all(c.startswith(conjugations[0][:-1].removesuffix('d')) and c.endswith(suffix) for c, suffix in zip(conjugations, ('a', 'r', 'de', 't'))):
-        return (conjugations[0][:-1], '2a')
-    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('a', 'er', 'te', 't'))):
-        return (conjugations[0][:-1], '2b')
-    if all(c.endswith(suffix) for c, suffix in zip(conjugations, ('', 'r', 'dde', 'tt'))):
-        return (conjugations[0], '3')
+    for group in ('1', '2a', '2b', '3'):
+        stem, candidates = conjugate(conjugations[0], group)
+        if candidates == conjugations:
+            return stem, group
     return (None, '4')
 
 CONJUGATION_GROUP_IDS = {'1': 'Q106617269', '2a': 'Q106617270', '2b': 'Q106617271', '3': 'Q106617272', '4': 'Q106617274'}
