@@ -164,6 +164,7 @@ def main():
     lexemes = {lexeme: tuple(conjugations) for lexeme, conjugations in lexemes.items() if all(conjugations)}
 
     for lexeme, conjugations in lexemes.items():
+        logging.info(f'lexeme={lexeme} {", ".join(conjugations)}')
         stem, klass = classify(conjugations)
         logging.info(f'lexeme={lexeme} stem={stem} class={klass}')
 
