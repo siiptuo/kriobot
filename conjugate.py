@@ -116,7 +116,7 @@ def classify(conjugations):
         stem, candidates = conjugate(conjugations[0], group)
         if candidates == conjugations:
             return stem, group
-    return (None, '4')
+    return None, '4'
 
 CONJUGATION_GROUP_IDS = {'1': 'Q106617269', '2a': 'Q106617270', '2b': 'Q106617271', '3': 'Q106617272', '4': 'Q106617274'}
 
@@ -160,20 +160,22 @@ def main():
             elif SUPINE_ID in features:
                 lexemes[lexeme][3] = conjugation
 
+    # Filter out lexemes without all required conjugations.
+    lexemes = {lexeme: tuple(conjugations) for lexeme, conjugations in lexemes.items() if all(conjugations)}
+
     for lexeme, conjugations in lexemes.items():
-        if all(conjugations):
-            stem, klass = classify(conjugations)
-            logging.info(f'lexeme={lexeme} stem={stem} class={klass}')
+        stem, klass = classify(conjugations)
+        logging.info(f'lexeme={lexeme} stem={stem} class={klass}')
 
-            data = [wbi_datatype.ItemID(value=CONJUGATION_GROUP_IDS[klass], prop_nr='P5186')]
-            summary = 'add conjugation class'
-            if stem:
-                data.append(wbi_datatype.MonolingualText(text=stem, prop_nr='P5187', language='sv'))
-                summary += ' and stem'
-            summary += ' [[User:Kriobot#Task_1|#task1]]'
+        data = [wbi_datatype.ItemID(value=CONJUGATION_GROUP_IDS[klass], prop_nr='P5186')]
+        summary = 'add conjugation class'
+        if stem:
+            data.append(wbi_datatype.MonolingualText(text=stem, prop_nr='P5187', language='sv'))
+            summary += ' and stem'
+        summary += ' [[User:Kriobot#Task_1|#task1]]'
 
-            item = wbi_core.ItemEngine(item_id=lexeme, data=data)
-            item.write(login_instance, edit_summary=summary)
+        item = wbi_core.ItemEngine(item_id=lexeme, data=data)
+        item.write(login_instance, edit_summary=summary)
 
 if __name__ == '__main__':
     main()
