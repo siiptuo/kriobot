@@ -10,6 +10,8 @@ from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
 from common import create_login_instance
 
+VOWELS = set('aeiouyåäö')
+
 def conjugate1(infinitive):
     '''
     >>> conjugate1('kalla')
@@ -29,6 +31,10 @@ def conjugate2a(infinitive):
     ('tänd', ('tända', 'tänder', 'tände', 'tänt'))
     >>> conjugate2a('röra')
     ('rör', ('röra', 'rör', 'rörde', 'rört'))
+    >>> conjugate2a('lyda')
+    ('lyd', ('lyda', 'lyder', 'lydde', 'lytt'))
+    >>> conjugate2a('träda')
+    ('träd', ('träda', 'träder', 'trädde', 'trätt'))
     '''
     if infinitive.endswith('ra'):
         stem = infinitive[:-1]
@@ -36,12 +42,12 @@ def conjugate2a(infinitive):
     else:
         stem = infinitive[:-1]
         present = stem + 'er'
-    if stem.endswith('d'):
+    if stem.endswith('d') and stem[-2] not in VOWELS:
         preterite = stem + 'e'
     else:
         preterite = stem + 'de'
     if stem.endswith('d'):
-        supine = stem[:-1] + 't'
+        supine = stem[:-1] + ('tt' if stem[-2] in VOWELS else 't')
     else:
         supine = stem + 't'
     return stem, (infinitive, present, preterite, supine)
