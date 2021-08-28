@@ -35,10 +35,15 @@ def conjugate2a(infinitive):
     ('lyd', ('lyda', 'lyder', 'lydde', 'lytt'))
     >>> conjugate2a('träda')
     ('träd', ('träda', 'träder', 'trädde', 'trätt'))
+    >>> conjugate2a('drömma')
+    ('dröm', ('drömma', 'drömmer', 'drömde', 'drömt'))
     '''
     if infinitive.endswith('ra'):
         stem = infinitive[:-1]
         present = stem
+    elif infinitive.endswith('mma'):
+        stem = infinitive[:-2]
+        present = stem + 'mer'
     else:
         stem = infinitive[:-1]
         present = stem + 'er'
