@@ -22,88 +22,156 @@ class Lexeme:
         return f'Lexeme({self.qid}, {self.lemma})'
 
 class Task:
-    def __init__(self, language: Language, from_category: LexicalCategory, to_category: LexicalCategory, prefix=None, suffix=None):
-        if prefix and suffix:
-            raise Exception('Having both prefix and suffix is not supported.')
+    def __init__(self, language: Language, category: LexicalCategory, transform, include=None, exclude=None):
         self.language = language
-        self.from_category = from_category
-        self.to_category = to_category
-        self.prefix = prefix
-        self.suffix = suffix
+        self.category = category
+        self.transform = transform
+        self.include = include
+        self.exclude = exclude
+        self.limit = 5
 
     def _search_lexemes(self):
         '''Search lexemes matching the specified prefix or suffix.'''
-        query = 'SELECT ?lexeme ?lemma WHERE {'
-        query += f' ?lexeme dct:language wd:{self.language.value};'
-        query += f' wikibase:lexicalCategory wd:{self.from_category.value};'
-        query += ' wikibase:lemma ?lemma.'
-        if self.prefix:
-            query += f' FILTER(REGEX(?lemma, "^{self.prefix.lemma[:-1]}"))'
-        elif self.suffix:
-            query += f' FILTER(REGEX(?lemma, "{self.suffix.lemma[1:]}$"))'
+        query =   'SELECT ?lexeme ?lemma WHERE {\n'
+        query += f'  ?lexeme dct:language wd:{self.language.value};\n'
+        query += f'    wikibase:lexicalCategory wd:{self.category.value};\n'
+        query +=  '    wikibase:lemma ?lemma.\n'
+        if self.include:
+            query += f'  FILTER(REGEX(?lemma, "{self.include}"))\n'
+        if self.exclude:
+            query += f'  FILTER(!REGEX(?lemma, "{self.exclude}"))\n'
         # Ignore lexemes with existing combines (P5238) claims. These might be
         # previously added by this bot or humans.
-        query += ' MINUS { ?lexeme wdt:P5238 []. }'
-        query += '}'
-        query += ' LIMIT 5'
+        query += '  MINUS { ?lexeme wdt:P5238 []. }\n'
+        query += '}\n'
+        # Query extra lexemes to fill the limit because some lexemes may be
+        # skipped later if no matching lexeme is found.
+        query += f'LIMIT {10*self.limit}'
         data = wbi_functions.execute_sparql_query(query)
         lexemes = []
         for row in data['results']['bindings']:
             lexemes.append(Lexeme(row['lexeme']['value'], row['lemma']['value']))
         return lexemes
 
-    def _query_lexeme(self, lemma):
-        '''Search a single lexeme with the specified lemma.'''
-        query =   'SELECT ?lexeme WHERE {\n'
-        query += f'  ?lexeme dct:language wd:{self.language.value};\n'
-        query += f'          wikibase:lexicalCategory wd:{self.to_category.value};\n'
-        query +=  '          wikibase:lemma ?lemma.\n'
-        query += f'  FILTER(STR(?lemma) = "{lemma}")\n'
-        query +=  '}'
-        data = wbi_functions.execute_sparql_query(query)
-        # To play it safe, let's continue only if we found a single lexeme.
-        if len(data['results']['bindings']) != 1:
-            return None
-        return Lexeme(data['results']['bindings'][0]['lexeme']['value'], lemma)
-
     def execute(self):
+        i = 0
         for lexeme in self._search_lexemes():
-            if self.prefix:
-                stem = lexeme.lemma[len(self.prefix.lemma)-1:]
-                if match := self._query_lexeme(stem):
-                    yield lexeme, [self.prefix, match]
-            elif self.suffix:
-                stem = lexeme.lemma[:-len(self.suffix.lemma)+1]
-                if match := self._query_lexeme(stem):
-                    yield lexeme, [match, self.suffix]
+            if i == self.limit:
+                break
+            parts = self.transform(lexeme.lemma)
+            if all(parts):
+                yield lexeme, parts
+                i += 1
+
+def find_lexeme(lemma: str, language: Language, category: LexicalCategory):
+    '''Search a single lexeme with the specified lemma.'''
+
+    query =   'SELECT ?lexeme WHERE {\n'
+    query += f'  ?lexeme dct:language wd:{language.value};\n'
+    query += f'    wikibase:lexicalCategory wd:{category.value};\n'
+    query +=  '    wikibase:lemma ?lemma.\n'
+    query += f'  FILTER(STR(?lemma) = "{lemma}")\n'
+    query +=  '}'
+
+    data = wbi_functions.execute_sparql_query(query)
+    results = data['results']['bindings']
+
+    # To play it safe, let's continue only if we found a single lexeme.
+    if len(results) != 1:
+        return None
+
+    qid = results[0]['lexeme']['value']
+    return Lexeme(qid, lemma)
 
 def main():
     logging.basicConfig(level=logging.INFO)
 
     tasks = [
+        # "unbounded" → "un-" + "bounded"
         Task(
             language=Language.ENGLISH,
-            from_category=LexicalCategory.ADJ,
-            to_category=LexicalCategory.ADJ,
-            prefix=Lexeme('L15649', 'un-')
+            category=LexicalCategory.ADJ,
+            include='^un',
+            exclude='^under',
+            transform=lambda lemma: (
+                Lexeme('L15649', 'un-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('un'),
+                    language=Language.ENGLISH,
+                    category=LexicalCategory.ADJ,
+                ),
+            )
         ),
+        # "unbox" → "un-" + "box"
         Task(
             language=Language.ENGLISH,
-            from_category=LexicalCategory.ADJ,
-            to_category=LexicalCategory.NOUN,
-            suffix=Lexeme('L303186', '-less')
+            category=LexicalCategory.VERB,
+            include='^un',
+            exclude='^under',
+            transform=lambda lemma: (
+                Lexeme('L15649', 'un-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('un'),
+                    language=Language.ENGLISH,
+                    category=LexicalCategory.VERB,
+                ),
+            )
         ),
+        # "restless" → "rest" + "-less"
         Task(
             language=Language.ENGLISH,
-            from_category=LexicalCategory.NOUN,
-            to_category=LexicalCategory.ADJ,
-            suffix=Lexeme('L269834', '-ness')
+            category=LexicalCategory.ADJ,
+            include='less$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('less'),
+                    language=Language.ENGLISH,
+                    category=LexicalCategory.NOUN,
+                ),
+                Lexeme('L303186', '-less')
+            )
         ),
+        # "awkwardness" → "awkward" + "-ness"
+        Task(
+            language=Language.ENGLISH,
+            category=LexicalCategory.NOUN,
+            include='ness$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ness'),
+                    language=Language.ENGLISH,
+                    category=LexicalCategory.ADJ,
+                ),
+                Lexeme('L269834', '-ness'),
+            )
+        ),
+        # "okänslig" → "o-" + "-känslig"
         Task(
             language=Language.SWEDISH,
-            from_category=LexicalCategory.ADJ,
-            to_category=LexicalCategory.ADJ,
-            prefix=Lexeme('L406921', 'o-')
+            category=LexicalCategory.ADJ,
+            include='^o',
+            transform=lambda lemma: (
+                Lexeme('L406921', 'o-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('o'),
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.ADJ,
+                ),
+            )
+        ),
+        # "målare" → "måla" + "-are"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='are$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('re'),
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.VERB,
+                ),
+                Lexeme('L250345', '-are'),
+            ),
         ),
     ]
 
