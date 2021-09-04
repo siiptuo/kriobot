@@ -145,7 +145,7 @@ def main():
                 Lexeme('L269834', '-ness'),
             )
         ),
-        # "okänslig" → "o-" + "-känslig"
+        # "okänslig" → "o-" + "känslig"
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.ADJ,
@@ -171,6 +171,76 @@ def main():
                     category=LexicalCategory.VERB,
                 ),
                 Lexeme('L250345', '-are'),
+            ),
+        ),
+        # "värdelös" → "värde" + "-lös"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.ADJ,
+            include='lös$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('lös'),
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.NOUN,
+                ),
+                Lexeme('L47685', '-lös'),
+            ),
+        ),
+        # "problemfri" → "problem" + "-fri"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.ADJ,
+            include='fri$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('fri'),
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.NOUN,
+                ),
+                Lexeme('L47708', '-fri'),
+            ),
+        ),
+        # "rutinmässig" → "rutin" + "-mässig"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.ADJ,
+            include='mässig$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('mässig'),
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.NOUN,
+                ),
+                Lexeme('L53569', '-mässig'),
+            ),
+        ),
+        # "hållbar" → "hålla" + "-bar"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.ADJ,
+            include='bar$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('bar')+'a',
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.VERB,
+                ),
+                Lexeme('L349047', '-bar'),
+            ),
+        ),
+        # "möjlighet" → "möjlig" + "-het"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='het$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('het'),
+                    language=Language.SWEDISH,
+                    category=LexicalCategory.ADJ,
+                ),
+                Lexeme('L477760', '-het'),
             ),
         ),
     ]
