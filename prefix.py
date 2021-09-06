@@ -28,7 +28,7 @@ class Task:
         self.transform = transform
         self.include = include
         self.exclude = exclude
-        self.limit = 5
+        self.limit = 50
 
     def _search_lexemes(self):
         '''Search lexemes matching the specified prefix or suffix.'''

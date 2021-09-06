@@ -108,7 +108,7 @@ def main():
             ontolex:representation ?plural.
           FILTER(NOT EXISTS { ?lexeme wdt:P5911 []. })
         }
-        LIMIT 100
+        LIMIT 1000
         '''
     )
 
