@@ -148,7 +148,7 @@ def main():
           MINUS { ?lexeme wdt:P5186 [] }
         }
         GROUP BY ?lexeme ?form
-        LIMIT 100
+        LIMIT 1000
         '''
     )
     for row in data['results']['bindings']:
