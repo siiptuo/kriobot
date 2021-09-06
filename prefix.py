@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 Tuomas Siipola
+# SPDX-License-Identifier: MIT
+
 import logging
 from enum import Enum
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
