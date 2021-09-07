@@ -66,15 +66,17 @@ class Task:
                 yield lexeme, parts
                 i += 1
 
-def find_lexeme(lemma: str, language: Language, category: LexicalCategory):
+def find_lexeme(lemma: str, language: Language, categories: list[LexicalCategory]):
     '''Search a single lexeme with the specified lemma.'''
 
+    cats = ', '.join(f'wd:{cat.value}' for cat in categories)
     query =   'SELECT ?lexeme WHERE {\n'
     query += f'  ?lexeme dct:language wd:{language.value};\n'
-    query += f'    wikibase:lexicalCategory wd:{category.value};\n'
+    query += f'    wikibase:lexicalCategory ?category;\n'
     query +=  '    wikibase:lemma ?lemma.\n'
-    query += f'  FILTER(STR(?lemma) = "{lemma}")\n'
-    query +=  '}'
+    query += f'  FILTER(?category IN ({cats}) && STR(?lemma) = "{lemma}")\n'
+    query +=  '}\n'
+    query +=  'LIMIT 2'
 
     data = wbi_functions.execute_sparql_query(query)
     results = data['results']['bindings']
@@ -101,7 +103,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removeprefix('un'),
                     language=Language.ENGLISH,
-                    category=LexicalCategory.ADJ,
+                    categories=[LexicalCategory.ADJ],
                 ),
             )
         ),
@@ -116,7 +118,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removeprefix('un'),
                     language=Language.ENGLISH,
-                    category=LexicalCategory.VERB,
+                    categories=[LexicalCategory.VERB],
                 ),
             )
         ),
@@ -129,7 +131,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('less'),
                     language=Language.ENGLISH,
-                    category=LexicalCategory.NOUN,
+                    categories=[LexicalCategory.NOUN],
                 ),
                 Lexeme('L303186', '-less')
             )
@@ -143,7 +145,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('ness'),
                     language=Language.ENGLISH,
-                    category=LexicalCategory.ADJ,
+                    categories=[LexicalCategory.ADJ],
                 ),
                 Lexeme('L269834', '-ness'),
             )
@@ -158,7 +160,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removeprefix('o'),
                     language=Language.SWEDISH,
-                    category=LexicalCategory.ADJ,
+                    categories=[LexicalCategory.ADJ],
                 ),
             )
         ),
@@ -171,7 +173,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('re'),
                     language=Language.SWEDISH,
-                    category=LexicalCategory.VERB,
+                    categories=[LexicalCategory.VERB],
                 ),
                 Lexeme('L250345', '-are'),
             ),
@@ -185,7 +187,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('lös'),
                     language=Language.SWEDISH,
-                    category=LexicalCategory.NOUN,
+                    categories=[LexicalCategory.NOUN],
                 ),
                 Lexeme('L47685', '-lös'),
             ),
@@ -199,7 +201,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('fri'),
                     language=Language.SWEDISH,
-                    category=LexicalCategory.NOUN,
+                    categories=[LexicalCategory.NOUN],
                 ),
                 Lexeme('L47708', '-fri'),
             ),
@@ -213,7 +215,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('mässig'),
                     language=Language.SWEDISH,
-                    category=LexicalCategory.NOUN,
+                    categories=[LexicalCategory.NOUN],
                 ),
                 Lexeme('L53569', '-mässig'),
             ),
@@ -227,7 +229,7 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('bar')+'a',
                     language=Language.SWEDISH,
-                    category=LexicalCategory.VERB,
+                    categories=[LexicalCategory.VERB],
                 ),
                 Lexeme('L349047', '-bar'),
             ),
@@ -241,9 +243,95 @@ def main():
                 find_lexeme(
                     lemma=lemma.removesuffix('het'),
                     language=Language.SWEDISH,
-                    category=LexicalCategory.ADJ,
+                    categories=[LexicalCategory.ADJ],
                 ),
                 Lexeme('L477760', '-het'),
+            ),
+        ),
+        # "motivera" → "motiv" + "-era"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='.era$',
+            exclude='.isera$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('era'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.NOUN],
+                ),
+                Lexeme('L590606', '-era'),
+            ),
+        ),
+        # "katalogisera" → "katalog" + "-isera"
+        # "globalisera" → "global" + "-isera"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='.isera$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('isera'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+                ),
+                Lexeme('L590607', '-isera'),
+            ),
+        ),
+        # "överskatta" → "över-" + "skatta"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='^över.',
+            transform=lambda lemma: (
+                Lexeme('L583836', 'över-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('över'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+            ),
+        ),
+        # "överambitiös" → "över-" + "ambitiös"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.ADJ,
+            include='^över.',
+            transform=lambda lemma: (
+                Lexeme('L583836', 'över-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('över'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.ADJ],
+                ),
+            ),
+        ),
+        # "överkonsumtion" → "över-" + "konsumtion"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='^över.',
+            transform=lambda lemma: (
+                Lexeme('L583836', 'över-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('över'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.NOUN],
+                ),
+            ),
+        ),
+        # "återresa" → "åter-" + "resa"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='^åter.',
+            transform=lambda lemma: (
+                Lexeme('L456508', 'åter-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('åter'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
             ),
         ),
     ]
