@@ -4,6 +4,7 @@
 import logging
 from enum import Enum
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
+import sys
 
 from common import create_login_instance
 
@@ -31,9 +32,8 @@ class Task:
         self.transform = transform
         self.include = include
         self.exclude = exclude
-        self.limit = 50
 
-    def _search_lexemes(self):
+    def _search_lexemes(self, limit):
         '''Search lexemes matching the specified prefix or suffix.'''
         query =   'SELECT ?lexeme ?lemma WHERE {\n'
         query += f'  ?lexeme dct:language wd:{self.language.value};\n'
@@ -49,17 +49,17 @@ class Task:
         query += '}\n'
         # Query extra lexemes to fill the limit because some lexemes may be
         # skipped later if no matching lexeme is found.
-        query += f'LIMIT {10*self.limit}'
+        query += f'LIMIT {10*limit}'
         data = wbi_functions.execute_sparql_query(query)
         lexemes = []
         for row in data['results']['bindings']:
             lexemes.append(Lexeme(row['lexeme']['value'], row['lemma']['value']))
         return lexemes
 
-    def execute(self):
+    def execute(self, limit):
         i = 0
-        for lexeme in self._search_lexemes():
-            if i == self.limit:
+        for lexeme in self._search_lexemes(limit):
+            if i == limit:
                 break
             parts = self.transform(lexeme.lemma)
             if all(parts):
@@ -379,16 +379,21 @@ def main():
         ),
     ]
 
-    login_instance = create_login_instance()
+    write = '--write' in sys.argv
+    limit = 50 if write else 5
+
+    if write:
+        login_instance = create_login_instance()
 
     for task in tasks:
-        for lexeme, parts in task.execute():
+        for lexeme, parts in task.execute(limit):
             assert len(parts) == 2
             logging.info(f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})')
-            summary = f'combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]'
-            data = [wbi_datatype.Lexeme(value=part.qid, prop_nr='P5238', qualifiers=[wbi_datatype.String(value=str(i+1), prop_nr='P1545')]) for i, part in enumerate(parts)]
-            item = wbi_core.ItemEngine(item_id=lexeme.qid, data=data)
-            item.write(login_instance, edit_summary=summary)
+            if write:
+                summary = f'combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]'
+                data = [wbi_datatype.Lexeme(value=part.qid, prop_nr='P5238', qualifiers=[wbi_datatype.String(value=str(i+1), prop_nr='P1545')]) for i, part in enumerate(parts)]
+                item = wbi_core.ItemEngine(item_id=lexeme.qid, data=data)
+                item.write(login_instance, edit_summary=summary)
 
 if __name__ == '__main__':
     main()
