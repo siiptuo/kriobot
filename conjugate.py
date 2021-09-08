@@ -31,6 +31,10 @@ def conjugate2a(infinitive):
     ('tänd', ('tända', 'tänder', 'tände', 'tänt'))
     >>> conjugate2a('röra')
     ('rör', ('röra', 'rör', 'rörde', 'rört'))
+    >>> conjugate2a('tåla')
+    ('tål', ('tåla', 'tål', 'tålde', 'tålt'))
+    >>> conjugate2a('kyla')
+    ('kyl', ('kyla', 'kyler', 'kylde', 'kylt'))
     >>> conjugate2a('lyda')
     ('lyd', ('lyda', 'lyder', 'lydde', 'lytt'))
     >>> conjugate2a('träda')
@@ -38,7 +42,7 @@ def conjugate2a(infinitive):
     >>> conjugate2a('drömma')
     ('dröm', ('drömma', 'drömmer', 'drömde', 'drömt'))
     '''
-    if infinitive.endswith('ra'):
+    if infinitive.endswith('ra') or infinitive in ('tåla',):
         stem = infinitive[:-1]
         present = stem
     elif infinitive.endswith('mma'):
