@@ -96,7 +96,7 @@ def main():
         Task(
             language=Language.ENGLISH,
             category=LexicalCategory.ADJ,
-            include='^un',
+            include='^un.',
             exclude='^under',
             transform=lambda lemma: (
                 Lexeme('L15649', 'un-'),
@@ -111,7 +111,7 @@ def main():
         Task(
             language=Language.ENGLISH,
             category=LexicalCategory.VERB,
-            include='^un',
+            include='^un.',
             exclude='^under',
             transform=lambda lemma: (
                 Lexeme('L15649', 'un-'),
@@ -126,7 +126,7 @@ def main():
         Task(
             language=Language.ENGLISH,
             category=LexicalCategory.ADJ,
-            include='less$',
+            include='.less$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('less'),
@@ -140,7 +140,7 @@ def main():
         Task(
             language=Language.ENGLISH,
             category=LexicalCategory.NOUN,
-            include='ness$',
+            include='.ness$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('ness'),
@@ -154,7 +154,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.ADJ,
-            include='^o',
+            include='^o.',
             transform=lambda lemma: (
                 Lexeme('L406921', 'o-'),
                 find_lexeme(
@@ -168,7 +168,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.NOUN,
-            include='are$',
+            include='.are$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('re'),
@@ -182,7 +182,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.ADJ,
-            include='lös$',
+            include='.lös$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('lös'),
@@ -196,7 +196,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.ADJ,
-            include='fri$',
+            include='.fri$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('fri'),
@@ -210,7 +210,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.ADJ,
-            include='mässig$',
+            include='.mässig$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('mässig'),
@@ -224,7 +224,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.ADJ,
-            include='bar$',
+            include='.bar$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('bar')+'a',
@@ -238,7 +238,7 @@ def main():
         Task(
             language=Language.SWEDISH,
             category=LexicalCategory.NOUN,
-            include='het$',
+            include='.het$',
             transform=lambda lemma: (
                 find_lexeme(
                     lemma=lemma.removesuffix('het'),
@@ -329,6 +329,49 @@ def main():
                 Lexeme('L456508', 'åter-'),
                 find_lexeme(
                     lemma=lemma.removeprefix('åter'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+            ),
+        ),
+        # "handling" → "handla" + "-ing"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='.ing$',
+            exclude='ning$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ing')+'a',
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+                Lexeme('L591279', '-ing'),
+            ),
+        ),
+        # "tillverkning" → "tillverka" + "-ning"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='.ning$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ning')+'a',
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+                Lexeme('L230224', '-ning'),
+            ),
+        ),
+        # "avbryta" → "av-" + "bryta"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='^av.',
+            transform=lambda lemma: (
+                Lexeme('L583405', 'av-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('av'),
                     language=Language.SWEDISH,
                     categories=[LexicalCategory.VERB],
                 ),
