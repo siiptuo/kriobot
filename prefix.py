@@ -8,6 +8,7 @@ import sys
 from datetime import datetime, timezone
 import pickle
 from pathlib import Path
+import random
 
 from common import create_login_instance
 
@@ -62,7 +63,13 @@ class History:
         if lexeme.qid not in self.items:
             return False
         last_checked, matched = self.items[lexeme.qid]
-        return matched or (datetime.now(timezone.utc) - last_checked).days < 7
+        # Matched don't expire.
+        if matched:
+            return True
+        # Unmatched should expire in 1-2 weeks.
+        if (datetime.now(timezone.utc) - last_checked).days < 7:
+            return True
+        return random.random() > 1/7
 
 class Task:
     def __init__(self, language: Language, category: LexicalCategory, transform, include=None, exclude=None):
