@@ -11,31 +11,6 @@ from pathlib import Path
 
 from common import create_login_instance
 
-class Cache:
-    def __init__(self, filename):
-        cache_dir = Path('cache')
-        cache_dir.mkdir(exist_ok=True)
-        self.path = cache_dir / filename
-        try:
-            with self.path.open('rb') as f:
-                self.items = pickle.load(f)
-                print(self.items)
-        except FileNotFoundError:
-            self.items = {}
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        with self.path.open('wb') as f:
-            pickle.dump(self.items, f)
-
-    def add(self, item):
-        self.items[item] = datetime.now(timezone.utc)
-
-    def __contains__(self, item):
-        return item in self.items and (datetime.now(timezone.utc) - self.items[item]).days < 7
-
 class Language(Enum):
     ENGLISH = 'Q1860'
     SWEDISH = 'Q9027'
@@ -52,6 +27,42 @@ class Lexeme:
 
     def __str__(self):
         return f'Lexeme({self.qid}, {self.lemma})'
+
+class History:
+    '''
+    Stores information about previously processed lexemes:
+    - Successfully matched lexemes are skipped forever. This way errors can be
+      corrected by humans and the bot won't try to reinsert incorrect
+      information.
+    - Unmatched lexemes will be processed again after some time to see if
+      matching works this time. This reduces repeated queries.
+    '''
+
+    def __init__(self, filename):
+        history_dir = Path('history')
+        history_dir.mkdir(exist_ok=True)
+        self.path = history_dir / filename
+        try:
+            with self.path.open('rb') as f:
+                self.items = pickle.load(f)
+        except FileNotFoundError:
+            self.items = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        with self.path.open('wb') as f:
+            pickle.dump(self.items, f)
+
+    def add(self, lexeme: Lexeme, matched: bool):
+        self.items[lexeme.qid] = (datetime.now(timezone.utc), matched)
+
+    def __contains__(self, lexeme: Lexeme) -> bool:
+        if lexeme.qid not in self.items:
+            return False
+        last_checked, matched = self.items[lexeme.qid]
+        return matched or (datetime.now(timezone.utc) - last_checked).days < 7
 
 class Task:
     def __init__(self, language: Language, category: LexicalCategory, transform, include=None, exclude=None):
@@ -84,18 +95,20 @@ class Task:
             lexemes.append(Lexeme(row['lexeme']['value'], row['lemma']['value']))
         return lexemes
 
-    def execute(self, limit, cache):
+    def execute(self, limit, history):
         i = 0
         for lexeme in self._search_lexemes(limit):
             if i == limit:
                 break
-            if lexeme.qid in cache:
+            if lexeme in history:
                 continue
             parts = self.transform(lexeme.lemma)
-            cache.add(lexeme.qid)
             if all(parts):
                 yield lexeme, parts
                 i += 1
+                history.add(lexeme, matched=True)
+            else:
+                history.add(lexeme, matched=False)
 
 def find_lexeme(lemma: str, language: Language, categories: list[LexicalCategory]):
     '''Search a single lexeme with the specified lemma.'''
@@ -504,9 +517,9 @@ def main():
     if write:
         login_instance = create_login_instance()
 
-    with Cache('prefix.pickle') as cache:
+    with History('prefix.pickle') as history:
         for task in tasks:
-            for lexeme, parts in task.execute(limit, cache):
+            for lexeme, parts in task.execute(limit, history):
                 assert len(parts) == 2
                 logging.info(f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})')
                 if write:
