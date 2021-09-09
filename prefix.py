@@ -5,8 +5,36 @@ import logging
 from enum import Enum
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 import sys
+from datetime import datetime, timezone
+import pickle
+from pathlib import Path
 
 from common import create_login_instance
+
+class Cache:
+    def __init__(self, filename):
+        cache_dir = Path('cache')
+        cache_dir.mkdir(exist_ok=True)
+        self.path = cache_dir / filename
+        try:
+            with self.path.open('rb') as f:
+                self.items = pickle.load(f)
+                print(self.items)
+        except FileNotFoundError:
+            self.items = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        with self.path.open('wb') as f:
+            pickle.dump(self.items, f)
+
+    def add(self, item):
+        self.items[item] = datetime.now(timezone.utc)
+
+    def __contains__(self, item):
+        return item in self.items and (datetime.now(timezone.utc) - self.items[item]).days < 7
 
 class Language(Enum):
     ENGLISH = 'Q1860'
@@ -56,12 +84,15 @@ class Task:
             lexemes.append(Lexeme(row['lexeme']['value'], row['lemma']['value']))
         return lexemes
 
-    def execute(self, limit):
+    def execute(self, limit, cache):
         i = 0
         for lexeme in self._search_lexemes(limit):
             if i == limit:
                 break
+            if lexeme.qid in cache:
+                continue
             parts = self.transform(lexeme.lemma)
+            cache.add(lexeme.qid)
             if all(parts):
                 yield lexeme, parts
                 i += 1
@@ -473,15 +504,16 @@ def main():
     if write:
         login_instance = create_login_instance()
 
-    for task in tasks:
-        for lexeme, parts in task.execute(limit):
-            assert len(parts) == 2
-            logging.info(f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})')
-            if write:
-                summary = f'combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]'
-                data = [wbi_datatype.Lexeme(value=part.qid, prop_nr='P5238', qualifiers=[wbi_datatype.String(value=str(i+1), prop_nr='P1545')]) for i, part in enumerate(parts)]
-                item = wbi_core.ItemEngine(item_id=lexeme.qid, data=data)
-                item.write(login_instance, edit_summary=summary)
+    with Cache('prefix.pickle') as cache:
+        for task in tasks:
+            for lexeme, parts in task.execute(limit, cache):
+                assert len(parts) == 2
+                logging.info(f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})')
+                if write:
+                    summary = f'combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]'
+                    data = [wbi_datatype.Lexeme(value=part.qid, prop_nr='P5238', qualifiers=[wbi_datatype.String(value=str(i+1), prop_nr='P1545')]) for i, part in enumerate(parts)]
+                    item = wbi_core.ItemEngine(item_id=lexeme.qid, data=data)
+                    item.write(login_instance, edit_summary=summary)
 
 if __name__ == '__main__':
     main()
