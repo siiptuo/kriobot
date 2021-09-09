@@ -181,13 +181,17 @@ def main():
             )
         ),
         # "awkwardness" → "awkward" + "-ness"
+        # "happiness" → "happy" + "-ness"
         Task(
             language=Language.ENGLISH,
             category=LexicalCategory.NOUN,
             include='.ness$',
             transform=lambda lemma: (
                 find_lexeme(
-                    lemma=lemma.removesuffix('ness'),
+                    lemma=(
+                        lemma.removesuffix('iness')+'y' if lemma.endswith('iness')
+                        else lemma.removesuffix('ness')
+                    ),
                     language=Language.ENGLISH,
                     categories=[LexicalCategory.ADJ],
                 ),
