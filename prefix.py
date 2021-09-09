@@ -150,6 +150,36 @@ def main():
                 Lexeme('L269834', '-ness'),
             )
         ),
+        # "guitarist" → "guitar" + "-ist"
+        # "surrealist" → "surreal" + "-ist"
+        Task(
+            language=Language.ENGLISH,
+            category=LexicalCategory.NOUN,
+            include='.ist$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ist'),
+                    language=Language.ENGLISH,
+                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+                ),
+                Lexeme('L29847', '-ist'),
+            ),
+        ),
+        # "alcoholism" → "alcohol" + "-ism"
+        # "surrealism" → "surreal" + "-ism"
+        Task(
+            language=Language.ENGLISH,
+            category=LexicalCategory.NOUN,
+            include='.ism$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ism'),
+                    language=Language.ENGLISH,
+                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+                ),
+                Lexeme('L29596', '-ism'),
+            ),
+        ),
         # "okänslig" → "o-" + "känslig"
         Task(
             language=Language.SWEDISH,
@@ -375,6 +405,64 @@ def main():
                     language=Language.SWEDISH,
                     categories=[LexicalCategory.VERB],
                 ),
+            ),
+        ),
+        # "utandas" → "ut-" + "andas"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='^ut.',
+            transform=lambda lemma: (
+                Lexeme('L591605', 'ut-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('ut'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+            ),
+        ),
+        # "tillgå" → "till-" + "gå"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='^till.',
+            transform=lambda lemma: (
+                Lexeme('L591609', 'till-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('till'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+            ),
+        ),
+        # "gitarrist" → "gitarr" + "-ist"
+        # "absurdist" → "absurd" + "-ist"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='.ist$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ist'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+                ),
+                Lexeme('L477925', '-ist'),
+            ),
+        ),
+        # "alkoholism" → "alkohol" + "-ism"
+        # "absurdism" → "absurd" + "-ism"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.NOUN,
+            include='.ism$',
+            transform=lambda lemma: (
+                find_lexeme(
+                    lemma=lemma.removesuffix('ism'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+                ),
+                Lexeme('L347287', '-ism'),
             ),
         ),
     ]
