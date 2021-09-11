@@ -22,7 +22,7 @@ class LexicalCategory(Enum):
     VERB = 'Q24905'
 
 class Lexeme:
-    def __init__(self, qid, lemma):
+    def __init__(self, qid, lemma=None):
         self.qid = qid.removeprefix('http://www.wikidata.org/entity/')
         self.lemma = lemma
 
@@ -56,10 +56,14 @@ class History:
         with self.path.open('wb') as f:
             pickle.dump(self.items, f)
 
-    def add(self, lexeme: Lexeme, matched: bool):
-        self.items[lexeme.qid] = (datetime.now(timezone.utc), matched)
+    def add(self, lexeme: Lexeme, matched: bool, now: datetime = None):
+        if now is None:
+            now = datetime.now(timezone.utc)
+        self.items[lexeme.qid] = (now, matched)
 
-    def __contains__(self, lexeme: Lexeme) -> bool:
+    def __contains__(self, lexeme: Lexeme, now: datetime = None) -> bool:
+        if now is None:
+            now = datetime.now(timezone.utc)
         if lexeme.qid not in self.items:
             return False
         last_checked, matched = self.items[lexeme.qid]
@@ -67,7 +71,7 @@ class History:
         if matched:
             return True
         # Unmatched should expire in 1-2 weeks.
-        if (datetime.now(timezone.utc) - last_checked).days < 7:
+        if (now - last_checked).days < 7:
             return True
         return random.random() > 1/7
 
