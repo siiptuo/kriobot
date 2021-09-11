@@ -6,10 +6,11 @@ from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
 from common import create_login_instance
 
-FIFTH_DECLENSION_EXCEPTIONS = [('mus', 'möss'), ('gås', 'gäss'), ('man', 'män')]
+FIFTH_DECLENSION_EXCEPTIONS = [("mus", "möss"), ("gås", "gäss"), ("man", "män")]
+
 
 def classify(singular, plural):
-    '''
+    """
     >>> classify('flicka', 'flickor')
     1
     >>> classify('våg', 'vågor')
@@ -74,23 +75,31 @@ def classify(singular, plural):
     5
     >>> classify('man', 'män')
     5
-    '''
+    """
     if singular == plural:
         return 5
     for s, p in FIFTH_DECLENSION_EXCEPTIONS:
         if singular.endswith(s) and plural.endswith(p):
             return 5
-    if not singular.endswith('o') and plural.endswith('or'):
+    if not singular.endswith("o") and plural.endswith("or"):
         return 1
-    if not singular.endswith('a') and plural.endswith('ar'):
+    if not singular.endswith("a") and plural.endswith("ar"):
         return 2
-    if plural.endswith('r'):
+    if plural.endswith("r"):
         return 3
-    if plural.endswith('n'):
+    if plural.endswith("n"):
         return 4
     return None
 
-DECLENSION_ID = {1: 'Q106602496', 2: 'Q106602498', 3: 'Q106602499', 4: 'Q106602501', 5: 'Q106602503'}
+
+DECLENSION_ID = {
+    1: "Q106602496",
+    2: "Q106602498",
+    3: "Q106602499",
+    4: "Q106602501",
+    5: "Q106602503",
+}
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -98,7 +107,7 @@ def main():
     login_instance = create_login_instance()
 
     data = wbi_functions.execute_sparql_query(
-        '''
+        """
         SELECT ?lexeme ?singular ?plural WHERE {
           ?lexeme dct:language wd:Q9027;
             wikibase:lexicalCategory wd:Q1084;
@@ -109,21 +118,26 @@ def main():
           FILTER(NOT EXISTS { ?lexeme wdt:P5911 []. })
         }
         LIMIT 1000
-        '''
+        """
     )
 
-    for row in data['results']['bindings']:
-        lexeme = row['lexeme']['value'].removeprefix('http://www.wikidata.org/entity/')
-        singular = row['singular']['value']
-        plural = row['plural']['value']
+    for row in data["results"]["bindings"]:
+        lexeme = row["lexeme"]["value"].removeprefix("http://www.wikidata.org/entity/")
+        singular = row["singular"]["value"]
+        plural = row["plural"]["value"]
         klass = classify(singular, plural)
-        logging.info(f'lexeme={lexeme} singular={singular} plural={plural} class={klass}')
+        logging.info(
+            f"lexeme={lexeme} singular={singular} plural={plural} class={klass}"
+        )
         if not klass:
             continue
 
-        data = [wbi_datatype.ItemID(value=DECLENSION_ID[klass], prop_nr='P5911')]
+        data = [wbi_datatype.ItemID(value=DECLENSION_ID[klass], prop_nr="P5911")]
         item = wbi_core.ItemEngine(item_id=lexeme, data=data)
-        item.write(login_instance, edit_summary='add declension [[User:Kriobot#Task_1|#task1]]')
+        item.write(
+            login_instance, edit_summary="add declension [[User:Kriobot#Task_1|#task1]]"
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
