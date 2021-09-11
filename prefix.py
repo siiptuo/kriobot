@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import pickle
 from pathlib import Path
 import random
+from typings import Callable, Optional
 
 from common import create_login_instance
 
@@ -39,7 +40,7 @@ class History:
       matching works this time. This reduces repeated queries.
     '''
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         history_dir = Path('history')
         history_dir.mkdir(exist_ok=True)
         self.path = history_dir / filename
@@ -61,9 +62,7 @@ class History:
             now = datetime.now(timezone.utc)
         self.items[lexeme.qid] = (now, matched)
 
-    def __contains__(self, lexeme: Lexeme, now: datetime = None) -> bool:
-        if now is None:
-            now = datetime.now(timezone.utc)
+    def __contains__(self, lexeme) -> bool:
         if lexeme.qid not in self.items:
             return False
         last_checked, matched = self.items[lexeme.qid]
@@ -71,19 +70,20 @@ class History:
         if matched:
             return True
         # Unmatched should expire in 1-2 weeks.
+        now = datetime.now(timezone.utc)
         if (now - last_checked).days < 7:
             return True
         return random.random() > 1/7
 
 class Task:
-    def __init__(self, language: Language, category: LexicalCategory, transform, include=None, exclude=None):
+    def __init__(self, language: Language, category: LexicalCategory, transform: Callable[[str], list[Lexeme]], include=None, exclude=None):
         self.language = language
         self.category = category
         self.transform = transform
         self.include = include
         self.exclude = exclude
 
-    def _search_lexemes(self, limit):
+    def _search_lexemes(self, limit: int):
         '''Search lexemes matching the specified prefix or suffix.'''
         query =   'SELECT ?lexeme ?lemma WHERE {\n'
         query += f'  ?lexeme dct:language wd:{self.language.value};\n'
@@ -106,7 +106,7 @@ class Task:
             lexemes.append(Lexeme(row['lexeme']['value'], row['lemma']['value']))
         return lexemes
 
-    def execute(self, limit, history):
+    def execute(self, limit: int, history: History):
         i = 0
         for lexeme in self._search_lexemes(limit):
             if i == limit:
@@ -121,7 +121,7 @@ class Task:
             else:
                 history.add(lexeme, matched=False)
 
-def find_lexeme(lemma: str, language: Language, categories: list[LexicalCategory]):
+def find_lexeme(lemma: str, language: Language, categories: list[LexicalCategory]) -> Optional[Lexeme]:
     '''Search a single lexeme with the specified lemma.'''
 
     cats = ', '.join(f'wd:{cat.value}' for cat in categories)
