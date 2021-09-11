@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+
 from wikibaseintegrator import wbi_login
 from wikibaseintegrator.wbi_config import config as wbi_config
 

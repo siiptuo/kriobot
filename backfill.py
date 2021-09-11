@@ -5,10 +5,10 @@ import json
 import sys
 import urllib.parse
 import urllib.request
-from time import sleep
 from datetime import datetime
+from time import sleep
 
-from prefix import Lexeme, History
+from prefix import History, Lexeme
 
 
 class MediaWikiError(Exception):

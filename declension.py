@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
 from common import create_login_instance

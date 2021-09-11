@@ -2,14 +2,15 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from enum import Enum
-from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
+import pickle
+import random
 import sys
 from datetime import datetime, timezone
-import pickle
+from enum import Enum
 from pathlib import Path
-import random
-from typings import Callable, Optional
+from typing import Callable, Optional
+
+from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
 from common import create_login_instance
 
