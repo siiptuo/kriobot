@@ -524,6 +524,20 @@ def main():
                 Lexeme('L347287', '-ism'),
             ),
         ),
+        # "förkorta" → "för-" + "korta"
+        Task(
+            language=Language.SWEDISH,
+            category=LexicalCategory.VERB,
+            include='^för.',
+            transform=lambda lemma: (
+                Lexeme('L347290', 'för-'),
+                find_lexeme(
+                    lemma=lemma.removeprefix('för'),
+                    language=Language.SWEDISH,
+                    categories=[LexicalCategory.VERB],
+                ),
+            ),
+        ),
     ]
 
     write = '--write' in sys.argv
