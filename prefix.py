@@ -25,6 +25,7 @@ class LexicalCategory(Enum):
     ADJ = "Q34698"
     NOUN = "Q1084"
     VERB = "Q24905"
+    ADVERB = "Q380057"
 
 
 class Lexeme:
@@ -317,6 +318,61 @@ def en_able(lemma: str) -> list[Optional[Lexeme]]:
             categories=[LexicalCategory.VERB],
         ),
         Lexeme("L457381", "-able"),
+    ]
+
+
+# "manly" → "man" + "-ly"
+# "daily" → "day" + "-ly"
+@task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".ly$")
+def en_ly_adj(lemma: str) -> list[Optional[Lexeme]]:
+    lemma = lemma.removesuffix("ly")
+    if lemma[-1] == "i":
+        lemma = lemma[:-1] + "y"
+    return [
+        find_lexeme(
+            lemma=lemma,
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L592203", "-ly"),
+    ]
+
+
+# "suddenly" → "sudden" + "-ly"
+# "easily" → "easy" + "-ly"
+# "fully" → "full" + "-ly"
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.ADVERB,
+    include=".ly$",
+    exclude="ally$",
+)
+def en_ly_adverb(lemma: str) -> list[Optional[Lexeme]]:
+    lemma = lemma.removesuffix("ly")
+    if lemma[-1] == "i":
+        lemma = lemma[:-1] + "y"
+    elif lemma[-1] == "l":
+        lemma += "l"
+    return [
+        find_lexeme(
+            lemma=lemma,
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+        Lexeme("L28890", "-ly"),
+    ]
+
+
+# "basically" → "basic" + "-ally"
+@task(language=Language.ENGLISH, category=LexicalCategory.ADVERB, include=".ically$")
+def en_ally(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ally"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+        Lexeme("L592202", "-ally"),
     ]
 
 
