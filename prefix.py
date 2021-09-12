@@ -4,11 +4,11 @@
 import argparse
 import logging
 import pickle
-import random
 import sys
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from random import Random
 from typing import Callable, Optional
 
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
@@ -72,14 +72,11 @@ class History:
         if lexeme.qid not in self.items:
             return False
         last_checked, matched = self.items[lexeme.qid]
-        # Matched don't expire.
         if matched:
             return True
-        # Unmatched should expire in 1-2 weeks.
         now = datetime.now(timezone.utc)
-        if (now - last_checked).days < 7:
-            return True
-        return random.random() > 1 / 7
+        r = Random(f"{lexeme.qid} {last_checked}")
+        return (now - last_checked).days < r.randint(14, 28)
 
 
 class Task:
