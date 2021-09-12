@@ -267,6 +267,62 @@ def en_ism(lemma: str) -> list[Optional[Lexeme]]:
     ]
 
 
+# "peaceful" → "peace" + "-ful"
+# "beautiful" → "beauty" + "-ful"
+@task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".ful$")
+def en_ful_adj(lemma: str) -> list[Optional[Lexeme]]:
+    lemma = lemma.removesuffix("ful")
+    if lemma[-1] == "i":
+        lemma = lemma[:-1] + "y"
+    return [
+        find_lexeme(
+            lemma=lemma,
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L7893", "-ful"),
+    ]
+
+
+# "handful" → "hand" + "-ful"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ful$")
+def en_ful_noun(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ful"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L592127", "-ful"),
+    ]
+
+
+# "breakable" → "break" + "-able"
+# "fashionable" → "fashion" + "-able"
+# "movable" → "move" + "-able"
+# "educable" → "educate" + "-able"
+@task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".able$")
+def en_able(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("able"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB, LexicalCategory.NOUN],
+        )
+        or find_lexeme(
+            lemma=lemma.removesuffix("able") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+        or find_lexeme(
+            lemma=lemma.removesuffix("able") + "ate",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L457381", "-able"),
+    ]
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^o.")
 def sv_o(lemma: str) -> list[Optional[Lexeme]]:
