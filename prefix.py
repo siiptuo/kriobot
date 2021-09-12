@@ -135,6 +135,16 @@ class Task:
                 history.add(lexeme, matched=False)
 
 
+tasks = []
+
+
+def task(**kwargs):
+    def inner(transform):
+        tasks.append(Task(**kwargs, transform=transform))
+
+    return inner
+
+
 def find_lexeme(
     lemma: str, language: Language, categories: list[LexicalCategory]
 ) -> Optional[Lexeme]:
@@ -160,403 +170,388 @@ def find_lexeme(
     return Lexeme(qid, lemma)
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-
-    tasks = [
-        # "unbounded" → "un-" + "bounded"
-        Task(
+# "unbounded" → "un-" + "bounded"
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.ADJ,
+    include="^un.",
+    exclude="^under",
+)
+def en_un_adj(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L15649", "un-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("un"),
             language=Language.ENGLISH,
-            category=LexicalCategory.ADJ,
-            include="^un.",
-            exclude="^under",
-            transform=lambda lemma: (
-                Lexeme("L15649", "un-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("un"),
-                    language=Language.ENGLISH,
-                    categories=[LexicalCategory.ADJ],
-                ),
-            ),
-        ),
-        # "unbox" → "un-" + "box"
-        Task(
-            language=Language.ENGLISH,
-            category=LexicalCategory.VERB,
-            include="^un.",
-            exclude="^under",
-            transform=lambda lemma: (
-                Lexeme("L15649", "un-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("un"),
-                    language=Language.ENGLISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
-        ),
-        # "restless" → "rest" + "-less"
-        Task(
-            language=Language.ENGLISH,
-            category=LexicalCategory.ADJ,
-            include=".less$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("less"),
-                    language=Language.ENGLISH,
-                    categories=[LexicalCategory.NOUN],
-                ),
-                Lexeme("L303186", "-less"),
-            ),
-        ),
-        # "awkwardness" → "awkward" + "-ness"
-        # "happiness" → "happy" + "-ness"
-        Task(
-            language=Language.ENGLISH,
-            category=LexicalCategory.NOUN,
-            include=".ness$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=(
-                        lemma.removesuffix("iness") + "y"
-                        if lemma.endswith("iness")
-                        else lemma.removesuffix("ness")
-                    ),
-                    language=Language.ENGLISH,
-                    categories=[LexicalCategory.ADJ],
-                ),
-                Lexeme("L269834", "-ness"),
-            ),
-        ),
-        # "guitarist" → "guitar" + "-ist"
-        # "surrealist" → "surreal" + "-ist"
-        Task(
-            language=Language.ENGLISH,
-            category=LexicalCategory.NOUN,
-            include=".ist$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("ist"),
-                    language=Language.ENGLISH,
-                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
-                ),
-                Lexeme("L29847", "-ist"),
-            ),
-        ),
-        # "alcoholism" → "alcohol" + "-ism"
-        # "surrealism" → "surreal" + "-ism"
-        Task(
-            language=Language.ENGLISH,
-            category=LexicalCategory.NOUN,
-            include=".ism$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("ism"),
-                    language=Language.ENGLISH,
-                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
-                ),
-                Lexeme("L29596", "-ism"),
-            ),
-        ),
-        # "okänslig" → "o-" + "känslig"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.ADJ,
-            include="^o.",
-            transform=lambda lemma: (
-                Lexeme("L406921", "o-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("o"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.ADJ],
-                ),
-            ),
-        ),
-        # "målare" → "måla" + "-are"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include=".are$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("re"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-                Lexeme("L250345", "-are"),
-            ),
-        ),
-        # "värdelös" → "värde" + "-lös"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.ADJ,
-            include=".lös$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("lös"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN],
-                ),
-                Lexeme("L47685", "-lös"),
-            ),
-        ),
-        # "problemfri" → "problem" + "-fri"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.ADJ,
-            include=".fri$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("fri"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN],
-                ),
-                Lexeme("L47708", "-fri"),
-            ),
-        ),
-        # "rutinmässig" → "rutin" + "-mässig"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.ADJ,
-            include=".mässig$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("mässig"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN],
-                ),
-                Lexeme("L53569", "-mässig"),
-            ),
-        ),
-        # "hållbar" → "hålla" + "-bar"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.ADJ,
-            include=".bar$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("bar") + "a",
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-                Lexeme("L349047", "-bar"),
-            ),
-        ),
-        # "möjlighet" → "möjlig" + "-het"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include=".het$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("het"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.ADJ],
-                ),
-                Lexeme("L477760", "-het"),
-            ),
-        ),
-        # "motivera" → "motiv" + "-era"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include=".era$",
-            exclude=".isera$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("era"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN],
-                ),
-                Lexeme("L590606", "-era"),
-            ),
-        ),
-        # "katalogisera" → "katalog" + "-isera"
-        # "globalisera" → "global" + "-isera"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include=".isera$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("isera"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
-                ),
-                Lexeme("L590607", "-isera"),
-            ),
-        ),
-        # "överskatta" → "över-" + "skatta"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include="^över.",
-            transform=lambda lemma: (
-                Lexeme("L583836", "över-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("över"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
-        ),
-        # "överambitiös" → "över-" + "ambitiös"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.ADJ,
-            include="^över.",
-            transform=lambda lemma: (
-                Lexeme("L583836", "över-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("över"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.ADJ],
-                ),
-            ),
-        ),
-        # "överkonsumtion" → "över-" + "konsumtion"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include="^över.",
-            transform=lambda lemma: (
-                Lexeme("L583836", "över-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("över"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN],
-                ),
-            ),
-        ),
-        # "återresa" → "åter-" + "resa"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include="^åter.",
-            transform=lambda lemma: (
-                Lexeme("L456508", "åter-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("åter"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
-        ),
-        # "handling" → "handla" + "-ing"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include=".ing$",
-            exclude="ning$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("ing") + "a",
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-                Lexeme("L591279", "-ing"),
-            ),
-        ),
-        # "tillverkning" → "tillverka" + "-ning"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include=".ning$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("ning") + "a",
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-                Lexeme("L230224", "-ning"),
-            ),
-        ),
-        # "avbryta" → "av-" + "bryta"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include="^av.",
-            transform=lambda lemma: (
-                Lexeme("L583405", "av-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("av"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
-        ),
-        # "utandas" → "ut-" + "andas"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include="^ut.",
-            transform=lambda lemma: (
-                Lexeme("L591605", "ut-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("ut"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
-        ),
-        # "tillgå" → "till-" + "gå"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include="^till.",
-            transform=lambda lemma: (
-                Lexeme("L591609", "till-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("till"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
-        ),
-        # "gitarrist" → "gitarr" + "-ist"
-        # "absurdist" → "absurd" + "-ist"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include=".ist$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("ist"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
-                ),
-                Lexeme("L477925", "-ist"),
-            ),
-        ),
-        # "alkoholism" → "alkohol" + "-ism"
-        # "absurdism" → "absurd" + "-ism"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.NOUN,
-            include=".ism$",
-            transform=lambda lemma: (
-                find_lexeme(
-                    lemma=lemma.removesuffix("ism"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
-                ),
-                Lexeme("L347287", "-ism"),
-            ),
-        ),
-        # "förkorta" → "för-" + "korta"
-        Task(
-            language=Language.SWEDISH,
-            category=LexicalCategory.VERB,
-            include="^för.",
-            transform=lambda lemma: (
-                Lexeme("L347290", "för-"),
-                find_lexeme(
-                    lemma=lemma.removeprefix("för"),
-                    language=Language.SWEDISH,
-                    categories=[LexicalCategory.VERB],
-                ),
-            ),
+            categories=[LexicalCategory.ADJ],
         ),
     ]
+
+
+# "unbox" → "un-" + "box"
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.VERB,
+    include="^un.",
+    exclude="^under",
+)
+def en_un_verb(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L15649", "un-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("un"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+# "restless" → "rest" + "-less"
+@task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".less$")
+def en_less(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("less"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L303186", "-less"),
+    ]
+
+
+# "awkwardness" → "awkward" + "-ness"
+# "happiness" → "happy" + "-ness"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ness$")
+def en_ness(lemma: str) -> list[Optional[Lexeme]]:
+    lemma = lemma.removesuffix("ness")
+    if lemma[-1] == "i":
+        lemma = lemma[:-1] + "y"
+    return [
+        find_lexeme(
+            lemma=lemma,
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+        Lexeme("L269834", "-ness"),
+    ]
+
+
+# "guitarist" → "guitar" + "-ist"
+# "surrealist" → "surreal" + "-ist"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ist$")
+def en_ist(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ist"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L29847", "-ist"),
+    ]
+
+
+# "alcoholism" → "alcohol" + "-ism"
+# "surrealism" → "surreal" + "-ism"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ism$")
+def en_ism(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ism"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L29596", "-ism"),
+    ]
+
+
+# "okänslig" → "o-" + "känslig"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^o.")
+def sv_o(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L406921", "o-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("o"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+    ]
+
+
+# "målare" → "måla" + "-are"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".are$")
+def sv_are(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("re"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L250345", "-are"),
+    ]
+
+
+# "värdelös" → "värde" + "-lös"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".lös$")
+def sv_los(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("lös"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L47685", "-lös"),
+    ]
+
+
+# "problemfri" → "problem" + "-fri"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".fri$")
+def sv_fri(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("fri"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L47708", "-fri"),
+    ]
+
+
+# "rutinmässig" → "rutin" + "-mässig"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".mässig$")
+def sv_massig(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("mässig"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L53569", "-mässig"),
+    ]
+
+
+# "hållbar" → "hålla" + "-bar"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".bar$")
+def sv_bar(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("bar") + "a",
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L349047", "-bar"),
+    ]
+
+
+# "möjlighet" → "möjlig" + "-het"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".het$")
+def sv_het(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("het"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+        Lexeme("L477760", "-het"),
+    ]
+
+
+# "motivera" → "motiv" + "-era"
+@task(
+    language=Language.SWEDISH,
+    category=LexicalCategory.VERB,
+    include=".era$",
+    exclude=".isera$",
+)
+def sv_era(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("era"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L590606", "-era"),
+    ]
+
+
+# "katalogisera" → "katalog" + "-isera"
+# "globalisera" → "global" + "-isera"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include=".isera$")
+def sv_isera(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("isera"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L590607", "-isera"),
+    ]
+
+
+# "överskatta" → "över-" + "skatta"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^över.")
+def sv_over_verb(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L583836", "över-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("över"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+# "överambitiös" → "över-" + "ambitiös"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^över.")
+def sv_over_adj(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L583836", "över-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("över"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+    ]
+
+
+# "överkonsumtion" → "över-" + "konsumtion"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include="^över.")
+def sv_over_noun(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L583836", "över-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("över"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+    ]
+
+
+# "återresa" → "åter-" + "resa"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^åter.")
+def sv_ater(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L456508", "åter-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("åter"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+# "handling" → "handla" + "-ing"
+@task(
+    language=Language.SWEDISH,
+    category=LexicalCategory.NOUN,
+    include=".ing$",
+    exclude="ning$",
+)
+def sv_ing(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ing") + "a",
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L591279", "-ing"),
+    ]
+
+
+# "tillverkning" → "tillverka" + "-ning"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".ning$")
+def sv_ning(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ning") + "a",
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L230224", "-ning"),
+    ]
+
+
+# "avbryta" → "av-" + "bryta"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^av.")
+def sv_av(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L583405", "av-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("av"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+# "utandas" → "ut-" + "andas"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^ut.")
+def sv_ut(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L591605", "ut-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("ut"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+# "tillgå" → "till-" + "gå"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^till.")
+def sv_till(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L591609", "till-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("till"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+# "gitarrist" → "gitarr" + "-ist"
+# "absurdist" → "absurd" + "-ist"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".ist$")
+def sv_ist(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ist"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L477925", "-ist"),
+    ]
+
+
+# "alkoholism" → "alkohol" + "-ism"
+# "absurdism" → "absurd" + "-ism"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".ism$")
+def sv_ism(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        find_lexeme(
+            lemma=lemma.removesuffix("ism"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L347287", "-ism"),
+    ]
+
+
+# "förkorta" → "för-" + "korta"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^för.")
+def sv_for(lemma: str) -> list[Optional[Lexeme]]:
+    return [
+        Lexeme("L347290", "för-"),
+        find_lexeme(
+            lemma=lemma.removeprefix("för"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+
+
+def main():
+    logging.basicConfig(level=logging.INFO)
 
     write = "--write" in sys.argv
     limit = 50 if write else 5
