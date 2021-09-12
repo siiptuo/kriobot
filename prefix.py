@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2021 Tuomas Siipola
 # SPDX-License-Identifier: MIT
 
+import argparse
 import logging
 import pickle
 import random
@@ -86,15 +87,17 @@ class Task:
         self,
         language: Language,
         category: LexicalCategory,
-        transform: Callable[[str], list[Lexeme]],
+        transform: Callable[[str], list[Optional[Lexeme]]],
         include=None,
         exclude=None,
+        name=None,
     ):
         self.language = language
         self.category = category
         self.transform = transform
         self.include = include
         self.exclude = exclude
+        self.name = name
 
     def _search_lexemes(self, limit: int):
         """Search lexemes matching the specified prefix or suffix."""
@@ -139,8 +142,8 @@ tasks = []
 
 
 def task(**kwargs):
-    def inner(transform):
-        tasks.append(Task(**kwargs, transform=transform))
+    def inner(fn):
+        tasks.append(Task(name=fn.__name__, **kwargs, transform=fn))
 
     return inner
 
@@ -553,20 +556,29 @@ def sv_for(lemma: str) -> list[Optional[Lexeme]]:
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    write = "--write" in sys.argv
-    limit = 50 if write else 5
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--write", action="store_true")
+    parser.add_argument("--task")
+    args = parser.parse_args()
 
-    if write:
+    if args.task:
+        execute_tasks = [task for task in tasks if task.name == args.task]
+    else:
+        execute_tasks = tasks
+
+    limit = 50 if args.write else 5
+
+    if args.write:
         login_instance = create_login_instance()
 
     with History("prefix.pickle") as history:
-        for task in tasks:
+        for task in execute_tasks:
             for lexeme, parts in task.execute(limit, history):
                 assert len(parts) == 2
                 logging.info(
                     f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})'
                 )
-                if write:
+                if args.write:
                     summary = f"combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]"
                     data = [
                         wbi_datatype.Lexeme(
