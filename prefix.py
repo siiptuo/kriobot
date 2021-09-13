@@ -338,21 +338,41 @@ def en_ly_adj(lemma: str) -> list[Optional[Lexeme]]:
     ]
 
 
-# "suddenly" → "sudden" + "-ly"
-# "easily" → "easy" + "-ly"
-# "fully" → "full" + "-ly"
 @task(
     language=Language.ENGLISH,
     category=LexicalCategory.ADVERB,
     include=".ly$",
-    exclude="ally$",
 )
 def en_ly_adverb(lemma: str) -> list[Optional[Lexeme]]:
+    if lemma.endswith("ally"):
+        # "basically" → "basic" + "-ally"
+        if root := find_lexeme(
+            lemma=lemma.removesuffix("ally"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ],
+        ):
+            return [root, Lexeme("L592202", "-ally")]
+
+        # "mythically" → "mythical" + "-ly"
+        return [
+            find_lexeme(
+                lemma=lemma.removesuffix("ly"),
+                language=Language.ENGLISH,
+                categories=[LexicalCategory.ADJ],
+            ),
+            Lexeme("L28890", "-ly"),
+        ]
+
+    # "suddenly" → "sudden" + "-ly"
     lemma = lemma.removesuffix("ly")
+
+    # "easily" → "easy" + "-ly"
     if lemma[-1] == "i":
         lemma = lemma[:-1] + "y"
+    # "fully" → "full" + "-ly"
     elif lemma[-1] == "l":
         lemma += "l"
+
     return [
         find_lexeme(
             lemma=lemma,
@@ -360,19 +380,6 @@ def en_ly_adverb(lemma: str) -> list[Optional[Lexeme]]:
             categories=[LexicalCategory.ADJ],
         ),
         Lexeme("L28890", "-ly"),
-    ]
-
-
-# "basically" → "basic" + "-ally"
-@task(language=Language.ENGLISH, category=LexicalCategory.ADVERB, include=".ically$")
-def en_ally(lemma: str) -> list[Optional[Lexeme]]:
-    return [
-        find_lexeme(
-            lemma=lemma.removesuffix("ally"),
-            language=Language.ENGLISH,
-            categories=[LexicalCategory.ADJ],
-        ),
-        Lexeme("L592202", "-ally"),
     ]
 
 
