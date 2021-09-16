@@ -295,27 +295,27 @@ def en_ful_noun(lemma: str) -> list[Optional[Lexeme]]:
     ]
 
 
-# "breakable" → "break" + "-able"
-# "fashionable" → "fashion" + "-able"
-# "movable" → "move" + "-able"
-# "educable" → "educate" + "-able"
 @task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".able$")
 def en_able(lemma: str) -> list[Optional[Lexeme]]:
     return [
+        # "educable" → "educate" + "-able"
         find_lexeme(
-            lemma=lemma.removesuffix("able"),
+            lemma=lemma.removesuffix("able") + "ate",
             language=Language.ENGLISH,
-            categories=[LexicalCategory.VERB, LexicalCategory.NOUN],
+            categories=[LexicalCategory.VERB],
         )
+        # "movable" → "move" + "-able"
         or find_lexeme(
             lemma=lemma.removesuffix("able") + "e",
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
+        # "breakable" → "break" + "-able"
+        # "fashionable" → "fashion" + "-able"
         or find_lexeme(
-            lemma=lemma.removesuffix("able") + "ate",
+            lemma=lemma.removesuffix("able"),
             language=Language.ENGLISH,
-            categories=[LexicalCategory.VERB],
+            categories=[LexicalCategory.VERB, LexicalCategory.NOUN],
         ),
         Lexeme("L457381", "-able"),
     ]
