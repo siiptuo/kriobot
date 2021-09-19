@@ -756,6 +756,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--task")
+    parser.add_argument("--limit", type=int, default=5)
     args = parser.parse_args()
 
     if args.task:
@@ -763,14 +764,12 @@ def main():
     else:
         execute_tasks = tasks
 
-    limit = 50 if args.write else 5
-
     if args.write:
         login_instance = create_login_instance()
 
     with History("prefix.pickle") as history:
         for task in execute_tasks:
-            for result in task.execute(limit, history):
+            for result in task.execute(args.limit, history):
                 lexeme = result.lexeme
                 parts = result.parts
                 assert len(parts) == 2
