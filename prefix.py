@@ -723,12 +723,41 @@ def sv_ism(lexeme: Lexeme) -> Result:
 
 
 # "förkorta" → "för-" + "korta"
+# "förenkla" → "för-" + "enkla"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^för.")
 def sv_for(lexeme: Lexeme) -> Result:
     parts = [
         Lexeme("L347290", "för-"),
         find_lexeme(
             lemma=lexeme.lemma.removeprefix("för"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "föreställa" → "före-" + "ställa"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^före.")
+def sv_fore(lexeme: Lexeme) -> Result:
+    parts = [
+        Lexeme("L583807", "före-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("före"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "omskapa" → "om-" + "skapa"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^om.")
+def sv_om(lexeme: Lexeme) -> Result:
+    parts = [
+        Lexeme("L348192", "om-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("om"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
