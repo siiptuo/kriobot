@@ -22,6 +22,17 @@ def random_string(n):
     return "".join(random.choices(string.ascii_letters, k=n))
 
 
+def format_list(items):
+    """
+    >>> format_list(['A', 'B'])
+    'A and B'
+    >>> format_list(['A', 'B', 'C'])
+    'A, B and C'
+    """
+    assert len(items) >= 2
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
 class Language(Enum):
     ENGLISH = "Q1860"
     SWEDISH = "Q9027"
@@ -173,7 +184,7 @@ class Task:
             if lexeme in history:
                 continue
             result = self.transform(lexeme)
-            if all(result.parts):
+            if result.parts and all(result.parts):
                 yield result
                 i += 1
                 history.add(lexeme, matched=True)
@@ -401,24 +412,21 @@ def en_ly_adj(lexeme: Lexeme) -> Result:
 def en_ly_adverb(lexeme: Lexeme) -> Result:
     if lexeme.lemma.endswith("ally"):
         # "basically" → "basic" + "-ally"
-        if root := find_lexeme(
+        stem = find_lexeme(
             lemma=lexeme.lemma.removesuffix("ally"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ],
-        ):
-            parts = [cast(Optional[Lexeme], root), Lexeme("L592202", "-ally")]
-            return Result(lexeme=lexeme, parts=parts)
+        )
+        if stem:
+            return Result(lexeme=lexeme, parts=[stem, Lexeme("L592202", "-ally")])
 
         # "mythically" → "mythical" + "-ly"
-        parts = [
-            find_lexeme(
-                lemma=lexeme.lemma.removesuffix("ly"),
-                language=Language.ENGLISH,
-                categories=[LexicalCategory.ADJ],
-            ),
-            Lexeme("L28890", "-ly"),
-        ]
-        return Result(lexeme=lexeme, parts=parts)
+        stem = find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ly"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ],
+        )
+        return Result(lexeme=lexeme, parts=[stem, Lexeme("L28890", "-ly")])
 
     # "suddenly" → "sudden" + "-ly"
     lemma = lexeme.lemma.removesuffix("ly")
@@ -791,6 +799,69 @@ def sv_nad(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.VERBAL_NOUN])
 
 
+@task(language=Language.SWEDISH, category=LexicalCategory.ADVERB, include=".vis$")
+def sv_vis(lexeme: Lexeme) -> Result:
+    # "delvis" → "del" + "-vis"
+    # "dosvis" → "dos" + "-vis"
+    # "punktvis" → "punkt" + "-vis"
+    lemma = lexeme.lemma.removesuffix("vis")
+    stem = find_lexeme(
+        lemma=lemma,
+        language=Language.SWEDISH,
+        categories=[LexicalCategory.NOUN],
+    )
+    if stem:
+        return Result(lexeme=lexeme, parts=[stem, Lexeme("L593311", "-vis")])
+
+    # "kvartalsvis" → "kvartal" + "-s-" + "-vis"
+    if lemma.endswith("s"):
+        stem = find_lexeme(
+            lemma=lemma.removesuffix("s"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        )
+        return Result(
+            lexeme=lexeme,
+            parts=[
+                stem,
+                Lexeme("L54926", "-s-"),
+                Lexeme("L593311", "-vis"),
+            ],
+        )
+
+    # "möjligtvis" → "möjlig" + "-t" + "-vis"
+    if lemma.endswith("t"):
+        stem = find_lexeme(
+            lemma=lemma.removesuffix("t"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.ADJ],
+        )
+        return Result(
+            lexeme=lexeme,
+            parts=[
+                stem,
+                Lexeme("L593310", "-t"),
+                Lexeme("L593311", "-vis"),
+            ],
+        )
+
+    return Result(lexeme=lexeme, parts=[])
+
+
+# "snabbt" -> "snabb" + "-t"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADVERB, include=".t$")
+def sv_t(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("t"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+        Lexeme("L593310", "-t"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
 
@@ -813,12 +884,15 @@ def main():
             for result in task.execute(args.limit, history):
                 lexeme = result.lexeme
                 parts = result.parts
-                assert len(parts) == 2
-                logging.info(
-                    f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})'
+                summary = (
+                    "combines "
+                    + format_list(
+                        [f"[[Lexeme:{part.qid}|{part.lemma}]]" for part in parts]
+                    )
+                    + "[[User:Kriobot#Task_2|#task2]]"
                 )
+                logging.info(f"[[Lexeme:{lexeme.qid}|{lexeme.lemma}]]) {summary}")
                 if args.write:
-                    summary = f"combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]"
                     combines = [
                         wbi_datatype.Lexeme(
                             value=part.qid,
