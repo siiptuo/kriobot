@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from random import Random
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence, cast
 
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
@@ -32,6 +32,10 @@ class LexicalCategory(Enum):
     NOUN = "Q1084"
     VERB = "Q24905"
     ADVERB = "Q380057"
+
+
+class LexemeType(Enum):
+    VERBAL_NOUN = "Q1350145"
 
 
 class Lexeme:
@@ -86,12 +90,24 @@ class History:
         return (now - last_checked).days < r.randint(14, 28)
 
 
+class Result:
+    def __init__(
+        self,
+        lexeme: Lexeme,
+        parts: Sequence[Optional[Lexeme]],
+        types: Sequence[LexemeType] = None,
+    ):
+        self.lexeme = lexeme
+        self.parts = parts
+        self.types = types if types is not None else []
+
+
 class Task:
     def __init__(
         self,
         language: Language,
         category: LexicalCategory,
-        transform: Callable[[str], list[Optional[Lexeme]]],
+        transform: Callable[[str], Result],
         include=None,
         exclude=None,
         name=None,
@@ -144,9 +160,9 @@ class Task:
                 break
             if lexeme in history:
                 continue
-            parts = self.transform(lexeme.lemma)
-            if all(parts):
-                yield lexeme, parts
+            result = self.transform(lexeme)
+            if all(result.parts):
+                yield result
                 i += 1
                 history.add(lexeme, matched=True)
             else:
@@ -195,15 +211,16 @@ def find_lexeme(
     include="^un.",
     exclude="^under",
 )
-def en_un_adj(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_un_adj(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L15649", "un-"),
         find_lexeme(
-            lemma=lemma.removeprefix("un"),
+            lemma=lexeme.lemma.removeprefix("un"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "unbox" → "un-" + "box"
@@ -213,38 +230,40 @@ def en_un_adj(lemma: str) -> list[Optional[Lexeme]]:
     include="^un.",
     exclude="^under",
 )
-def en_un_verb(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_un_verb(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L15649", "un-"),
         find_lexeme(
-            lemma=lemma.removeprefix("un"),
+            lemma=lexeme.lemma.removeprefix("un"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "restless" → "rest" + "-less"
 @task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".less$")
-def en_less(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_less(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("less"),
+            lemma=lexeme.lemma.removesuffix("less"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L303186", "-less"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "awkwardness" → "awkward" + "-ness"
 # "happiness" → "happy" + "-ness"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ness$")
-def en_ness(lemma: str) -> list[Optional[Lexeme]]:
-    lemma = lemma.removesuffix("ness")
+def en_ness(lexeme: Lexeme) -> Result:
+    lemma = lexeme.lemma.removesuffix("ness")
     if lemma[-1] == "i":
         lemma = lemma[:-1] + "y"
-    return [
+    parts = [
         find_lexeme(
             lemma=lemma,
             language=Language.ENGLISH,
@@ -252,44 +271,47 @@ def en_ness(lemma: str) -> list[Optional[Lexeme]]:
         ),
         Lexeme("L269834", "-ness"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "guitarist" → "guitar" + "-ist"
 # "surrealist" → "surreal" + "-ist"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ist$")
-def en_ist(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_ist(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ist"),
+            lemma=lexeme.lemma.removesuffix("ist"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
         ),
         Lexeme("L29847", "-ist"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "alcoholism" → "alcohol" + "-ism"
 # "surrealism" → "surreal" + "-ism"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ism$")
-def en_ism(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_ism(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ism"),
+            lemma=lexeme.lemma.removesuffix("ism"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
         ),
         Lexeme("L29596", "-ism"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "peaceful" → "peace" + "-ful"
 # "beautiful" → "beauty" + "-ful"
 @task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".ful$")
-def en_ful_adj(lemma: str) -> list[Optional[Lexeme]]:
-    lemma = lemma.removesuffix("ful")
+def en_ful_adj(lexeme: Lexeme) -> Result:
+    lemma = lexeme.lemma.removesuffix("ful")
     if lemma[-1] == "i":
         lemma = lemma[:-1] + "y"
-    return [
+    parts = [
         find_lexeme(
             lemma=lemma,
             language=Language.ENGLISH,
@@ -297,55 +319,58 @@ def en_ful_adj(lemma: str) -> list[Optional[Lexeme]]:
         ),
         Lexeme("L7893", "-ful"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "handful" → "hand" + "-ful"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ful$")
-def en_ful_noun(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_ful_noun(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ful"),
+            lemma=lexeme.lemma.removesuffix("ful"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L592127", "-ful"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 @task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".able$")
-def en_able(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def en_able(lexeme: Lexeme) -> Result:
+    parts = [
         # "educable" → "educate" + "-able"
         find_lexeme(
-            lemma=lemma.removesuffix("able") + "ate",
+            lemma=lexeme.lemma.removesuffix("able") + "ate",
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
         # "movable" → "move" + "-able"
         or find_lexeme(
-            lemma=lemma.removesuffix("able") + "e",
+            lemma=lexeme.lemma.removesuffix("able") + "e",
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
         # "breakable" → "break" + "-able"
         # "fashionable" → "fashion" + "-able"
         or find_lexeme(
-            lemma=lemma.removesuffix("able"),
+            lemma=lexeme.lemma.removesuffix("able"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB, LexicalCategory.NOUN],
         ),
         Lexeme("L457381", "-able"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "manly" → "man" + "-ly"
 # "daily" → "day" + "-ly"
 @task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".ly$")
-def en_ly_adj(lemma: str) -> list[Optional[Lexeme]]:
-    lemma = lemma.removesuffix("ly")
+def en_ly_adj(lexeme: Lexeme) -> Result:
+    lemma = lexeme.lemma.removesuffix("ly")
     if lemma[-1] == "i":
         lemma = lemma[:-1] + "y"
-    return [
+    parts = [
         find_lexeme(
             lemma=lemma,
             language=Language.ENGLISH,
@@ -353,6 +378,7 @@ def en_ly_adj(lemma: str) -> list[Optional[Lexeme]]:
         ),
         Lexeme("L592203", "-ly"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 @task(
@@ -360,28 +386,30 @@ def en_ly_adj(lemma: str) -> list[Optional[Lexeme]]:
     category=LexicalCategory.ADVERB,
     include=".ly$",
 )
-def en_ly_adverb(lemma: str) -> list[Optional[Lexeme]]:
-    if lemma.endswith("ally"):
+def en_ly_adverb(lexeme: Lexeme) -> Result:
+    if lexeme.lemma.endswith("ally"):
         # "basically" → "basic" + "-ally"
         if root := find_lexeme(
-            lemma=lemma.removesuffix("ally"),
+            lemma=lexeme.lemma.removesuffix("ally"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ],
         ):
-            return [root, Lexeme("L592202", "-ally")]
+            parts = [cast(Optional[Lexeme], root), Lexeme("L592202", "-ally")]
+            return Result(lexeme=lexeme, parts=parts)
 
         # "mythically" → "mythical" + "-ly"
-        return [
+        parts = [
             find_lexeme(
-                lemma=lemma.removesuffix("ly"),
+                lemma=lexeme.lemma.removesuffix("ly"),
                 language=Language.ENGLISH,
                 categories=[LexicalCategory.ADJ],
             ),
             Lexeme("L28890", "-ly"),
         ]
+        return Result(lexeme=lexeme, parts=parts)
 
     # "suddenly" → "sudden" + "-ly"
-    lemma = lemma.removesuffix("ly")
+    lemma = lexeme.lemma.removesuffix("ly")
 
     # "easily" → "easy" + "-ly"
     if lemma[-1] == "i":
@@ -390,105 +418,113 @@ def en_ly_adverb(lemma: str) -> list[Optional[Lexeme]]:
     elif lemma[-1] == "l":
         lemma += "l"
 
-    return [
+    parts = [
         find_lexeme(
-            lemma=lemma,
+            lemma=lexeme.lemma,
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ],
         ),
         Lexeme("L28890", "-ly"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^o.")
-def sv_o(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_o(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L406921", "o-"),
         find_lexeme(
-            lemma=lemma.removeprefix("o"),
+            lemma=lexeme.lemma.removeprefix("o"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.ADJ],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "målare" → "måla" + "-are"
 @task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".are$")
-def sv_are(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_are(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("re"),
+            lemma=lexeme.lemma.removesuffix("re"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
         Lexeme("L250345", "-are"),
     ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.VERBAL_NOUN])
 
 
 # "värdelös" → "värde" + "-lös"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".lös$")
-def sv_los(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_los(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("lös"),
+            lemma=lexeme.lemma.removesuffix("lös"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L47685", "-lös"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "problemfri" → "problem" + "-fri"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".fri$")
-def sv_fri(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_fri(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("fri"),
+            lemma=lexeme.lemma.removesuffix("fri"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L47708", "-fri"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "rutinmässig" → "rutin" + "-mässig"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".mässig$")
-def sv_massig(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_massig(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("mässig"),
+            lemma=lexeme.lemma.removesuffix("mässig"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L53569", "-mässig"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "hållbar" → "hålla" + "-bar"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".bar$")
-def sv_bar(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_bar(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("bar") + "a",
+            lemma=lexeme.lemma.removesuffix("bar") + "a",
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
         Lexeme("L349047", "-bar"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "möjlighet" → "möjlig" + "-het"
 @task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".het$")
-def sv_het(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_het(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("het"),
+            lemma=lexeme.lemma.removesuffix("het"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.ADJ],
         ),
         Lexeme("L477760", "-het"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "motivera" → "motiv" + "-era"
@@ -498,81 +534,87 @@ def sv_het(lemma: str) -> list[Optional[Lexeme]]:
     include=".era$",
     exclude=".isera$",
 )
-def sv_era(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_era(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("era"),
+            lemma=lexeme.lemma.removesuffix("era"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L590606", "-era"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "katalogisera" → "katalog" + "-isera"
 # "globalisera" → "global" + "-isera"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include=".isera$")
-def sv_isera(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_isera(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("isera"),
+            lemma=lexeme.lemma.removesuffix("isera"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
         ),
         Lexeme("L590607", "-isera"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "överskatta" → "över-" + "skatta"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^över.")
-def sv_over_verb(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_over_verb(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L583836", "över-"),
         find_lexeme(
-            lemma=lemma.removeprefix("över"),
+            lemma=lexeme.lemma.removeprefix("över"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "överambitiös" → "över-" + "ambitiös"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^över.")
-def sv_over_adj(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_over_adj(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L583836", "över-"),
         find_lexeme(
-            lemma=lemma.removeprefix("över"),
+            lemma=lexeme.lemma.removeprefix("över"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.ADJ],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "överkonsumtion" → "över-" + "konsumtion"
 @task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include="^över.")
-def sv_over_noun(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_over_noun(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L583836", "över-"),
         find_lexeme(
-            lemma=lemma.removeprefix("över"),
+            lemma=lexeme.lemma.removeprefix("över"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "återresa" → "åter-" + "resa"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^åter.")
-def sv_ater(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_ater(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L456508", "åter-"),
         find_lexeme(
-            lemma=lemma.removeprefix("åter"),
+            lemma=lexeme.lemma.removeprefix("åter"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "handling" → "handla" + "-ing"
@@ -582,108 +624,130 @@ def sv_ater(lemma: str) -> list[Optional[Lexeme]]:
     include=".ing$",
     exclude="ning$",
 )
-def sv_ing(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_ing(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ing") + "a",
+            lemma=lexeme.lemma.removesuffix("ing") + "a",
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
         Lexeme("L591279", "-ing"),
     ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.VERBAL_NOUN])
 
 
 # "tillverkning" → "tillverka" + "-ning"
 @task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".ning$")
-def sv_ning(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_ning(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ning") + "a",
+            lemma=lexeme.lemma.removesuffix("ning") + "a",
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
         Lexeme("L230224", "-ning"),
     ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.VERBAL_NOUN])
 
 
 # "avbryta" → "av-" + "bryta"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^av.")
-def sv_av(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_av(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L583405", "av-"),
         find_lexeme(
-            lemma=lemma.removeprefix("av"),
+            lemma=lexeme.lemma.removeprefix("av"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "utandas" → "ut-" + "andas"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^ut.")
-def sv_ut(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_ut(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L591605", "ut-"),
         find_lexeme(
-            lemma=lemma.removeprefix("ut"),
+            lemma=lexeme.lemma.removeprefix("ut"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "tillgå" → "till-" + "gå"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^till.")
-def sv_till(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_till(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L591609", "till-"),
         find_lexeme(
-            lemma=lemma.removeprefix("till"),
+            lemma=lexeme.lemma.removeprefix("till"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "gitarrist" → "gitarr" + "-ist"
 # "absurdist" → "absurd" + "-ist"
 @task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".ist$")
-def sv_ist(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_ist(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ist"),
+            lemma=lexeme.lemma.removesuffix("ist"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
         ),
         Lexeme("L477925", "-ist"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "alkoholism" → "alkohol" + "-ism"
 # "absurdism" → "absurd" + "-ism"
 @task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".ism$")
-def sv_ism(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_ism(lexeme: Lexeme) -> Result:
+    parts = [
         find_lexeme(
-            lemma=lemma.removesuffix("ism"),
+            lemma=lexeme.lemma.removesuffix("ism"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
         ),
         Lexeme("L347287", "-ism"),
     ]
+    return Result(lexeme=lexeme, parts=parts)
 
 
 # "förkorta" → "för-" + "korta"
 @task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^för.")
-def sv_for(lemma: str) -> list[Optional[Lexeme]]:
-    return [
+def sv_for(lexeme: Lexeme) -> Result:
+    parts = [
         Lexeme("L347290", "för-"),
         find_lexeme(
-            lemma=lemma.removeprefix("för"),
+            lemma=lexeme.lemma.removeprefix("för"),
             language=Language.SWEDISH,
             categories=[LexicalCategory.VERB],
         ),
     ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "byggnad" → "bygga" + "-nad"
+@task(language=Language.SWEDISH, category=LexicalCategory.NOUN, include=".nad$")
+def sv_nad(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("nad") + "a",
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L593090", "-nad"),
+    ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.VERBAL_NOUN])
 
 
 def main():
@@ -706,14 +770,16 @@ def main():
 
     with History("prefix.pickle") as history:
         for task in execute_tasks:
-            for lexeme, parts in task.execute(limit, history):
+            for result in task.execute(limit, history):
+                lexeme = result.lexeme
+                parts = result.parts
                 assert len(parts) == 2
                 logging.info(
                     f'"{lexeme.lemma}" ({lexeme.qid}) combines "{parts[0].lemma}" ({parts[0].qid}) and "{parts[1].lemma}" ({parts[1].qid})'
                 )
                 if args.write:
                     summary = f"combines [[Lexeme:{parts[0].qid}|{parts[0].lemma}]] and [[Lexeme:{parts[1].qid}|{parts[1].lemma}]] [[User:Kriobot#Task_2|#task2]]"
-                    data = [
+                    combines = [
                         wbi_datatype.Lexeme(
                             value=part.qid,
                             prop_nr="P5238",
@@ -723,7 +789,13 @@ def main():
                         )
                         for i, part in enumerate(parts)
                     ]
-                    item = wbi_core.ItemEngine(item_id=lexeme.qid, data=data)
+                    instance_of = [
+                        wbi_datatype.ItemID(value=type.value, prop_nr="P31")
+                        for type in result.types
+                    ]
+                    item = wbi_core.ItemEngine(
+                        item_id=lexeme.qid, data=[*combines, *instance_of]
+                    )
                     item.write(login_instance, edit_summary=summary)
 
 
