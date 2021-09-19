@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from random import Random
-from typing import Callable, Optional, Sequence, cast
+from typing import Callable, Dict, Optional, Sequence, cast
 
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
@@ -47,6 +47,9 @@ class Lexeme:
         return f"Lexeme({self.qid}, {self.lemma})"
 
 
+HistoryDict = Dict[str, tuple[datetime, bool]]
+
+
 class History:
     """
     Stores information about previously processed lexemes:
@@ -63,21 +66,30 @@ class History:
         self.path = history_dir / filename
         try:
             with self.path.open("rb") as f:
-                self.items = pickle.load(f)
+                self.items: HistoryDict = pickle.load(f)
         except FileNotFoundError:
             self.items = {}
+        # Store changes separately and only in the end commit these to the
+        # history. This way multiple tasks may try to match the same lexeme.
+        self.changes: HistoryDict = {}
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        items = {**self.items, **self.changes}
         with self.path.open("wb") as f:
-            pickle.dump(self.items, f)
+            pickle.dump(items, f)
 
     def add(self, lexeme: Lexeme, matched: bool, now: datetime = None):
         if now is None:
             now = datetime.now(timezone.utc)
-        self.items[lexeme.qid] = (now, matched)
+        # Commit matched lexeme right away to the history, so that we don't try
+        # to match them more than once.
+        if matched:
+            self.items[lexeme.qid] = (now, matched)
+        else:
+            self.changes[lexeme.qid] = (now, matched)
 
     def __contains__(self, lexeme) -> bool:
         if lexeme.qid not in self.items:
