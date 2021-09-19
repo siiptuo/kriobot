@@ -4,6 +4,8 @@
 import argparse
 import logging
 import pickle
+import random
+import string
 import sys
 from datetime import datetime, timezone
 from enum import Enum
@@ -14,6 +16,10 @@ from typing import Callable, Optional
 from wikibaseintegrator import wbi_core, wbi_datatype, wbi_functions
 
 from common import create_login_instance
+
+
+def random_string(n):
+    return "".join(random.choices(string.ascii_letters, k=n))
 
 
 class Language(Enum):
@@ -98,22 +104,33 @@ class Task:
         self.name = name
 
     def _search_lexemes(self, limit: int):
-        """Search lexemes matching the specified prefix or suffix."""
         query = "SELECT ?lexeme ?lemma WHERE {\n"
         query += f"  ?lexeme dct:language wd:{self.language.value};\n"
         query += f"    wikibase:lexicalCategory wd:{self.category.value};\n"
         query += "    wikibase:lemma ?lemma.\n"
+
         if self.include:
             query += f'  FILTER(REGEX(?lemma, "{self.include}"))\n'
         if self.exclude:
             query += f'  FILTER(!REGEX(?lemma, "{self.exclude}"))\n'
+
         # Ignore lexemes with existing combines (P5238) claims. These might be
         # previously added by this bot or humans.
         query += "  MINUS { ?lexeme wdt:P5238 []. }\n"
+
+        # Randomize rows using custom randomization instead of RAND function.
+        # This will make it sure that the order is really random and embedding
+        # a random string to the query will bypass any caching. For more
+        # information, see https://byabbe.se/2020/09/17/getting-random-results-in-sparql
+        random = random_string(10)
+        query += f'  BIND(SHA512(CONCAT("{random}", STR(?lexeme))) AS ?random)\n'
         query += "}\n"
+        query += f"ORDER BY ?random\n"
+
         # Query extra lexemes to fill the limit because some lexemes may be
         # skipped later if no matching lexeme is found.
         query += f"LIMIT {10*limit}"
+
         data = wbi_functions.execute_sparql_query(query)
         lexemes = []
         for row in data["results"]["bindings"]:
