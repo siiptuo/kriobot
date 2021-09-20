@@ -889,7 +889,7 @@ def main():
                     + format_list(
                         [f"[[Lexeme:{part.qid}|{part.lemma}]]" for part in parts]
                     )
-                    + "[[User:Kriobot#Task_2|#task2]]"
+                    + " [[User:Kriobot#Task_2|#task2]]"
                 )
                 logging.info(f"[[Lexeme:{lexeme.qid}|{lexeme.lemma}]]) {summary}")
                 if args.write:
