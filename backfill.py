@@ -46,12 +46,17 @@ def usercontribs(username, kontinue=None):
         yield from usercontribs(username, response["continue"])
 
 
-with History("prefix.pickle") as history:
-    for contrib in usercontribs("Kriobot"):
-        if not contrib["title"].startswith("Lexeme:"):
-            continue
-        if "#task2" not in contrib["comment"]:
-            continue
-        lexeme = Lexeme(contrib["title"].removeprefix("Lexeme:"))
-        timestamp = datetime.strptime(contrib["timestamp"], "%Y-%m-%dT%H:%M:%S%z")
-        history.add(lexeme, matched=True, now=timestamp)
+def main():
+    with History("prefix.pickle") as history:
+        for contrib in usercontribs("Kriobot"):
+            if not contrib["title"].startswith("Lexeme:"):
+                continue
+            if "#task2" not in contrib["comment"]:
+                continue
+            lexeme = Lexeme(contrib["title"].removeprefix("Lexeme:"))
+            timestamp = datetime.strptime(contrib["timestamp"], "%Y-%m-%dT%H:%M:%S%z")
+            history.add(lexeme, matched=True, now=timestamp)
+
+
+if __name__ == "__main__":
+    main()
