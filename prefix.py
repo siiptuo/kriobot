@@ -440,7 +440,7 @@ def en_ly_adverb(lexeme: Lexeme) -> Result:
 
     parts = [
         find_lexeme(
-            lemma=lexeme.lemma,
+            lemma=lemma,
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ],
         ),
