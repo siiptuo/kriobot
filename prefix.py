@@ -229,11 +229,11 @@ def find_lexeme(
 
 
 # "unbounded" → "un-" + "bounded"
+# "underived" → "un-" + "derived"
 @task(
     language=Language.ENGLISH,
     category=LexicalCategory.ADJ,
     include="^un.",
-    exclude="^under",
 )
 def en_un_adj(lexeme: Lexeme) -> Result:
     parts = [
@@ -248,11 +248,11 @@ def en_un_adj(lexeme: Lexeme) -> Result:
 
 
 # "unbox" → "un-" + "box"
+# "underive" → "un-" + "derive"
 @task(
     language=Language.ENGLISH,
     category=LexicalCategory.VERB,
     include="^un.",
-    exclude="^under",
 )
 def en_un_verb(lexeme: Lexeme) -> Result:
     parts = [
