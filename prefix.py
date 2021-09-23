@@ -47,6 +47,7 @@ class LexicalCategory(Enum):
 
 class LexemeType(Enum):
     VERBAL_NOUN = "Q1350145"
+    ABSOLUTE_ADJ = "Q332375"
 
 
 class Lexeme:
@@ -860,6 +861,20 @@ def sv_t(lexeme: Lexeme) -> Result:
         Lexeme("L593310", "-t"),
     ]
     return Result(lexeme=lexeme, parts=parts)
+
+
+# "finskspråkig" → "finsk" + "-språkig"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".språkig$")
+def sv_sprakig(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("språkig"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.ADJ],
+        ),
+        Lexeme("L593973", "-språkig"),
+    ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.ABSOLUTE_ADJ])
 
 
 def main():
