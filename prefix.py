@@ -891,6 +891,20 @@ def sv_an(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "kraftig" → "kraft" + "-ig"
+@task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include=".ig$")
+def sv_ig(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ig"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L579313", "-ig"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
 
