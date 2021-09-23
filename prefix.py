@@ -877,6 +877,20 @@ def sv_sprakig(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.ABSOLUTE_ADJ])
 
 
+# "angöra" → "an-" + "göra"
+@task(language=Language.SWEDISH, category=LexicalCategory.VERB, include="^an.")
+def sv_an(lexeme: Lexeme) -> Result:
+    parts = [
+        Lexeme("L583404", "an-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("an"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
 
