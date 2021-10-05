@@ -412,22 +412,22 @@ def en_ly_adj(lexeme: Lexeme) -> Result:
 )
 def en_ly_adverb(lexeme: Lexeme) -> Result:
     if lexeme.lemma.endswith("ally"):
-        # "basically" → "basic" + "-ally"
-        stem = find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ally"),
-            language=Language.ENGLISH,
-            categories=[LexicalCategory.ADJ],
-        )
-        if stem:
-            return Result(lexeme=lexeme, parts=[stem, Lexeme("L592202", "-ally")])
-
         # "mythically" → "mythical" + "-ly"
         stem = find_lexeme(
             lemma=lexeme.lemma.removesuffix("ly"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ],
         )
-        return Result(lexeme=lexeme, parts=[stem, Lexeme("L28890", "-ly")])
+        if stem:
+            return Result(lexeme=lexeme, parts=[stem, Lexeme("L28890", "-ly")])
+
+        # "basically" → "basic" + "-ally"
+        stem = find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ally"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ],
+        )
+        return Result(lexeme=lexeme, parts=[stem, Lexeme("L592202", "-ally")])
 
     # "suddenly" → "sudden" + "-ly"
     lemma = lexeme.lemma.removesuffix("ly")
