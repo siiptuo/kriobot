@@ -450,6 +450,42 @@ def en_ly_adverb(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.NOUN,
+    include=".ion$",
+)
+def en_ion(lexeme: Lexeme) -> Result:
+    lemma = lexeme.lemma.removesuffix("ion")
+
+    # "sensation" → "sense" + "-ation"
+    if lemma.endswith("at"):
+        stem = find_lexeme(
+            lemma=lemma.removesuffix("at") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+        if stem:
+            return Result(lexeme=lexeme, parts=[stem, Lexeme("L35048", "-ation")])
+
+    # "manipulation" → "manipulate" + "-ion"
+    stem = find_lexeme(
+        lemma=lemma + "e",
+        language=Language.ENGLISH,
+        categories=[LexicalCategory.VERB],
+    )
+    if stem:
+        return Result(lexeme=lexeme, parts=[stem, Lexeme("L35036", "-ion")])
+
+    # "connection" → "connect" + "-ion"
+    stem = find_lexeme(
+        lemma=lemma,
+        language=Language.ENGLISH,
+        categories=[LexicalCategory.VERB],
+    )
+    return Result(lexeme=lexeme, parts=[stem, Lexeme("L35036", "-ion")])
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^o.")
 def sv_o(lexeme: Lexeme) -> Result:
