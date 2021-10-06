@@ -547,6 +547,33 @@ def en_ee(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
 
 
+@task(language=Language.ENGLISH, category=LexicalCategory.VERB, include=".ize$")
+def en_ize(lexeme: Lexeme) -> Result:
+    parts = [
+        # "colonize" → "colony" + "-ize"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ize") + "y",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        )
+        # "pixelize" → "pixel" + "-ize"
+        # "brutalize" → "brural" + "-ize"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ize"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        )
+        # "satirize" → "satire" + "-ize"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ize") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L480567", "-ize"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^o.")
 def sv_o(lexeme: Lexeme) -> Result:
