@@ -48,6 +48,7 @@ class LexicalCategory(Enum):
 class LexemeType(Enum):
     VERBAL_NOUN = "Q1350145"
     ABSOLUTE_ADJ = "Q332375"
+    AGENT_NOUN = "Q1787727"
 
 
 class Lexeme:
@@ -310,7 +311,7 @@ def en_ist(lexeme: Lexeme) -> Result:
         ),
         Lexeme("L29847", "-ist"),
     ]
-    return Result(lexeme=lexeme, parts=parts)
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
 
 
 # "alcoholism" → "alcohol" + "-ism"
@@ -486,6 +487,66 @@ def en_ion(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=[stem, Lexeme("L35036", "-ion")])
 
 
+# "reader" → "read" + "-er"
+# "computer" → "compute" + "-er"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".er$")
+def en_er(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("er"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("er")[:-1] + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L29845", "-er"),
+    ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
+
+
+# "actor" → "act" + "-or"
+# "survivor" → "survive" + "-or"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".or$")
+def en_or(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("or"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("or")[:-1] + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L29846", "-or"),
+    ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
+
+
+# "examinee" → "examine" + "-ee"
+# "interviewee" → "interview" + "-ee"
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ee$")
+def en_ee(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("e"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ee"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L47699", "-ee"),
+    ]
+    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, category=LexicalCategory.ADJ, include="^o.")
 def sv_o(lexeme: Lexeme) -> Result:
@@ -511,7 +572,11 @@ def sv_are(lexeme: Lexeme) -> Result:
         ),
         Lexeme("L250345", "-are"),
     ]
-    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.VERBAL_NOUN])
+    return Result(
+        lexeme=lexeme,
+        parts=parts,
+        types=[LexemeType.VERBAL_NOUN, LexemeType.AGENT_NOUN],
+    )
 
 
 # "värdelös" → "värde" + "-lös"
