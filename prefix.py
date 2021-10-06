@@ -487,18 +487,18 @@ def en_ion(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=[stem, Lexeme("L35036", "-ion")])
 
 
-# "reader" → "read" + "-er"
-# "computer" → "compute" + "-er"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".er$")
 def en_er(lexeme: Lexeme) -> Result:
     parts = [
+        # "reader" → "read" + "-er"
         find_lexeme(
             lemma=lexeme.lemma.removesuffix("er"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
+        # "computer" → "compute" + "-er"
         or find_lexeme(
-            lemma=lexeme.lemma.removesuffix("er")[:-1] + "e",
+            lemma=lexeme.lemma.removesuffix("r"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         ),
@@ -507,18 +507,18 @@ def en_er(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
 
 
-# "actor" → "act" + "-or"
-# "survivor" → "survive" + "-or"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".or$")
 def en_or(lexeme: Lexeme) -> Result:
     parts = [
+        # "actor" → "act" + "-or"
         find_lexeme(
             lemma=lexeme.lemma.removesuffix("or"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
+        # "survivor" → "survive" + "-or"
         or find_lexeme(
-            lemma=lexeme.lemma.removesuffix("or")[:-1] + "e",
+            lemma=lexeme.lemma.removesuffix("or") + "e",
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         ),
@@ -527,16 +527,16 @@ def en_or(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
 
 
-# "examinee" → "examine" + "-ee"
-# "interviewee" → "interview" + "-ee"
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".ee$")
 def en_ee(lexeme: Lexeme) -> Result:
     parts = [
+        # "examinee" → "examine" + "-ee"
         find_lexeme(
             lemma=lexeme.lemma.removesuffix("e"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
+        # "interviewee" → "interview" + "-ee"
         or find_lexeme(
             lemma=lexeme.lemma.removesuffix("ee"),
             language=Language.ENGLISH,
