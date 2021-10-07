@@ -267,6 +267,60 @@ def en_un_verb(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "defuse" → "de-" + "fuse"
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.VERB,
+    include="^de.",
+)
+def en_de_verb(lexeme: Lexeme) -> Result:
+    parts = [
+        Lexeme("L35199", "de-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("de"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "disconnect" → "dis-" + "connect"
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.VERB,
+    include="^dis.",
+)
+def en_dis_verb(lexeme: Lexeme) -> Result:
+    parts = [
+        Lexeme("L29593", "dis-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("dis"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "misunderstand" → "mis-" + "understand"
+@task(
+    language=Language.ENGLISH,
+    category=LexicalCategory.VERB,
+    include="^mis.",
+)
+def en_mis_verb(lexeme: Lexeme) -> Result:
+    parts = [
+        Lexeme("L613650", "mis-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("mis"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "restless" → "rest" + "-less"
 @task(language=Language.ENGLISH, category=LexicalCategory.ADJ, include=".less$")
 def en_less(lexeme: Lexeme) -> Result:
