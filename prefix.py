@@ -541,24 +541,39 @@ def en_ion(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=[stem, Lexeme("L35036", "-ion")])
 
 
-@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".er$")
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="...er$")
 def en_er(lexeme: Lexeme) -> Result:
-    parts = [
-        # "reader" → "read" + "-er"
-        find_lexeme(
-            lemma=lexeme.lemma.removesuffix("er"),
+    lemma = lexeme.lemma.removesuffix("er")
+    stem = None
+
+    # "runner" → "run" + "-er"
+    # "bidder" → "bid" + "-er"
+    if lemma[-1] == lemma[-2]:
+        stem = find_lexeme(
+            lemma=lemma[:-1],
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
-        # "computer" → "compute" + "-er"
-        or find_lexeme(
-            lemma=lexeme.lemma.removesuffix("r"),
+
+    # "killer" → "kill" + "-er"
+    # "reader" → "read" + "-er"
+    # "computer" → "compute" + "-er"
+    if stem is None:
+        stem = find_lexeme(
+            lemma=lemma,
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
-        ),
-        Lexeme("L29845", "-er"),
-    ]
-    return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
+        ) or find_lexeme(
+            lemma=lemma + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+
+    return Result(
+        lexeme=lexeme,
+        parts=[stem, Lexeme("L29845", "-er")],
+        types=[LexemeType.AGENT_NOUN],
+    )
 
 
 @task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include=".or$")
