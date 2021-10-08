@@ -271,7 +271,7 @@ def en_un_verb(lexeme: Lexeme) -> Result:
 @task(
     language=Language.ENGLISH,
     category=LexicalCategory.VERB,
-    include="^de...",
+    include="^de......",
 )
 def en_de_verb(lexeme: Lexeme) -> Result:
     parts = [
@@ -289,7 +289,7 @@ def en_de_verb(lexeme: Lexeme) -> Result:
 @task(
     language=Language.ENGLISH,
     category=LexicalCategory.VERB,
-    include="^dis...",
+    include="^dis......",
 )
 def en_dis_verb(lexeme: Lexeme) -> Result:
     parts = [
@@ -307,7 +307,7 @@ def en_dis_verb(lexeme: Lexeme) -> Result:
 @task(
     language=Language.ENGLISH,
     category=LexicalCategory.VERB,
-    include="^mis...",
+    include="^mis......",
 )
 def en_mis_verb(lexeme: Lexeme) -> Result:
     parts = [
@@ -541,7 +541,7 @@ def en_ion(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=[stem, Lexeme("L35036", "-ion")])
 
 
-@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="...er$")
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="......er$")
 def en_er(lexeme: Lexeme) -> Result:
     lemma = lexeme.lemma.removesuffix("er")
     stem = None
@@ -576,7 +576,7 @@ def en_er(lexeme: Lexeme) -> Result:
     )
 
 
-@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="...or$")
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="......or$")
 def en_or(lexeme: Lexeme) -> Result:
     parts = [
         # "actor" → "act" + "-or"
@@ -596,7 +596,7 @@ def en_or(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
 
 
-@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="...ee$")
+@task(language=Language.ENGLISH, category=LexicalCategory.NOUN, include="......ee$")
 def en_ee(lexeme: Lexeme) -> Result:
     parts = [
         # "examinee" → "examine" + "-ee"
@@ -616,7 +616,7 @@ def en_ee(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts, types=[LexemeType.AGENT_NOUN])
 
 
-@task(language=Language.ENGLISH, category=LexicalCategory.VERB, include="...ize$")
+@task(language=Language.ENGLISH, category=LexicalCategory.VERB, include="......ize$")
 def en_ize(lexeme: Lexeme) -> Result:
     parts = [
         # "colonize" → "colony" + "-ize"
