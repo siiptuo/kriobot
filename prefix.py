@@ -744,6 +744,97 @@ def en_ize(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN],
+    include="...ment$",
+)
+def en_ment(lexeme: Lexeme) -> Result:
+    parts = [
+        # "abandonment" → "abandon" + "-ment"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ment"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        )
+        # "acknowledgment" → "acknowledge" + "-ment"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ment") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L29594", "-ment"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN],
+    include="...ity$",
+)
+def en_ity(lexeme: Lexeme) -> Result:
+    parts = [
+        # "absurdity" → "absurd" + "-ity"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ity"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
+        )
+        # "accountability" → "accountable" + "-ity"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ity") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
+        ),
+        Lexeme("L35038", "-ity"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.VERB],
+    include="...ify$",
+)
+def en_ify(lexeme: Lexeme) -> Result:
+    parts = [
+        # "beastify" → "beast" + "-ify"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ify"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
+        )
+        # "amplify" → "ample" + "-ify"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ify") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
+        ),
+        Lexeme("L478506", "-ify"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.ADJ],
+    include="...-?like$",
+)
+def en_like(lexeme: Lexeme) -> Result:
+    parts = [
+        # "childlike" → "child" + "-like"
+        # "snake-like" → "snake" + "-like"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("like").removesuffix("-"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L615446", "-like"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
