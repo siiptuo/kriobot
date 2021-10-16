@@ -1282,9 +1282,27 @@ def sv_an(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
-# "kraftig" → "kraft" + "-ig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="...ig$")
 def sv_ig(lexeme: Lexeme) -> Result:
+    if lexeme.lemma.endswith("lig"):
+        parts = [
+            # "liv" → "liv" + "-lig"
+            find_lexeme(
+                lemma=lexeme.lemma.removesuffix("lig"),
+                language=Language.SWEDISH,
+                categories=[LexicalCategory.NOUN],
+            )
+            # "lycklig" → "lycka" + "-lig"
+            or find_lexeme(
+                lemma=lexeme.lemma.removesuffix("lig") + "a",
+                language=Language.SWEDISH,
+                categories=[LexicalCategory.NOUN],
+            ),
+            Lexeme("L579134", "-lig"),
+        ]
+        return Result(lexeme=lexeme, parts=parts)
+
+    # "kraftig" → "kraft" + "-ig"
     parts = [
         find_lexeme(
             lemma=lexeme.lemma.removesuffix("ig"),
@@ -1292,6 +1310,40 @@ def sv_ig(lexeme: Lexeme) -> Result:
             categories=[LexicalCategory.NOUN],
         ),
         Lexeme("L579313", "-ig"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "dröm" → "dröm" + "-lik"
+@task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="...lik$")
+def sv_lik(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("lik"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L615449", "-lik"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "våldsam" → "vård" + "-sam"
+# "arbetsam" → "arbeta" + "-sam"
+@task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="...sam$")
+def sv_sam(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("sam"),
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.NOUN],
+        )
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("sam") + "a",
+            language=Language.SWEDISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L491120", "-sam"),
     ]
     return Result(lexeme=lexeme, parts=parts)
 
