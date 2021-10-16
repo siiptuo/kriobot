@@ -1328,7 +1328,7 @@ def sv_lik(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
-# "våldsam" → "vård" + "-sam"
+# "våldsam" → "våld" + "-sam"
 # "arbetsam" → "arbeta" + "-sam"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="...sam$")
 def sv_sam(lexeme: Lexeme) -> Result:
