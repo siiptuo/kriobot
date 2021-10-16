@@ -747,19 +747,19 @@ def en_ize(lexeme: Lexeme) -> Result:
 @task(
     language=Language.ENGLISH,
     categories=[LexicalCategory.NOUN],
-    include="...ment$",
+    include=".....ment$",
 )
 def en_ment(lexeme: Lexeme) -> Result:
     parts = [
-        # "abandonment" → "abandon" + "-ment"
+        # "acknowledgment" → "acknowledge" + "-ment"
         find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ment"),
+            lemma=lexeme.lemma.removesuffix("ment") + "e",
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         )
-        # "acknowledgment" → "acknowledge" + "-ment"
+        # "abandonment" → "abandon" + "-ment"
         or find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ment") + "e",
+            lemma=lexeme.lemma.removesuffix("ment"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
         ),
@@ -771,19 +771,19 @@ def en_ment(lexeme: Lexeme) -> Result:
 @task(
     language=Language.ENGLISH,
     categories=[LexicalCategory.NOUN],
-    include="...ity$",
+    include=".....ity$",
 )
 def en_ity(lexeme: Lexeme) -> Result:
     parts = [
-        # "absurdity" → "absurd" + "-ity"
+        # "accountability" → "accountable" + "-ity"
         find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ity"),
+            lemma=lexeme.lemma.removesuffix("ity") + "e",
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
         )
-        # "accountability" → "accountable" + "-ity"
+        # "absurdity" → "absurd" + "-ity"
         or find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ity") + "e",
+            lemma=lexeme.lemma.removesuffix("ity"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
         ),
@@ -795,19 +795,19 @@ def en_ity(lexeme: Lexeme) -> Result:
 @task(
     language=Language.ENGLISH,
     categories=[LexicalCategory.VERB],
-    include="...ify$",
+    include=".....ify$",
 )
 def en_ify(lexeme: Lexeme) -> Result:
     parts = [
-        # "beastify" → "beast" + "-ify"
+        # "amplify" → "ample" + "-ify"
         find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ify"),
+            lemma=lexeme.lemma.removesuffix("ify") + "e",
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
         )
-        # "amplify" → "ample" + "-ify"
+        # "beastify" → "beast" + "-ify"
         or find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ify") + "e",
+            lemma=lexeme.lemma.removesuffix("ify"),
             language=Language.ENGLISH,
             categories=[LexicalCategory.ADJ, LexicalCategory.NOUN],
         ),
