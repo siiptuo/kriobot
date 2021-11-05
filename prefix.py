@@ -420,6 +420,27 @@ def en_proto(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "overlook" → "over-" + "look"
+# "overkind" → "over-" + "kind"
+# "overlord" → "over-" + "lord"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.VERB, LexicalCategory.ADJ, LexicalCategory.NOUN],
+    include="^over-?...",
+)
+def en_over(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L618499", "over-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("over").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "restless" → "rest" + "-less"
 @task(language=Language.ENGLISH, categories=[LexicalCategory.ADJ], include="...less$")
 def en_less(lexeme: Lexeme) -> Result:
@@ -972,42 +993,21 @@ def sv_isera(lexeme: Lexeme) -> Result:
 
 
 # "överskatta" → "över-" + "skatta"
-@task(language=Language.SWEDISH, categories=[LexicalCategory.VERB], include="^över...")
-def sv_over_verb(lexeme: Lexeme) -> Result:
-    parts = [
-        Lexeme("L583836", "över-"),
-        find_lexeme(
-            lemma=lexeme.lemma.removeprefix("över"),
-            language=Language.SWEDISH,
-            categories=[LexicalCategory.VERB],
-        ),
-    ]
-    return Result(lexeme=lexeme, parts=parts)
-
-
 # "överambitiös" → "över-" + "ambitiös"
-@task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^över...")
-def sv_over_adj(lexeme: Lexeme) -> Result:
-    parts = [
-        Lexeme("L583836", "över-"),
-        find_lexeme(
-            lemma=lexeme.lemma.removeprefix("över"),
-            language=Language.SWEDISH,
-            categories=[LexicalCategory.ADJ],
-        ),
-    ]
-    return Result(lexeme=lexeme, parts=parts)
-
-
 # "överkonsumtion" → "över-" + "konsumtion"
-@task(language=Language.SWEDISH, categories=[LexicalCategory.NOUN], include="^över...")
-def sv_over_noun(lexeme: Lexeme) -> Result:
+@task(
+    language=Language.SWEDISH,
+    categories=[LexicalCategory.VERB, LexicalCategory.ADJ, LexicalCategory.NOUN],
+    include="^över...",
+)
+def sv_over(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
     parts = [
         Lexeme("L583836", "över-"),
         find_lexeme(
             lemma=lexeme.lemma.removeprefix("över"),
             language=Language.SWEDISH,
-            categories=[LexicalCategory.NOUN],
+            categories=[lexeme.category],
         ),
     ]
     return Result(lexeme=lexeme, parts=parts)
