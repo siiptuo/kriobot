@@ -910,6 +910,25 @@ def en_ship(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "freedom" → "free" + "-dom"
+# "kingdom" → "king" + "-dom"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN],
+    include="...dom$",
+)
+def en_dom(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("dom"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L618510", "-dom"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
