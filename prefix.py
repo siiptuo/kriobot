@@ -856,6 +856,60 @@ def en_like(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "venomous" → "venom" + "-ous"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.ADJ],
+    include="...ous$",
+)
+def en_ous(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ous"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L618508", "-ous"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "brotherhood" → "brother" + "-hood"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN],
+    include="...hood$",
+)
+def en_hood(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("hood"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L252104", "-hood"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "friendship" → "friend" + "-ship"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN],
+    include="...ship$",
+)
+def en_ship(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ship"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN],
+        ),
+        Lexeme("L348021", "-ship"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
