@@ -929,6 +929,105 @@ def en_dom(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "nonpayment" → "non-" + "payment"
+# "nonaggressive" → "non-" + "aggressive"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+    include="^non-?......",
+)
+def en_non(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L15648", "non-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("non").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "supercomputer" → "super-" + "computer"
+# "supercharge" → "super-" + "charge"
+# "supernatural" → "super-" + "natural"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ, LexicalCategory.VERB],
+    include="^super-?......",
+)
+def en_super(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L36094", "super-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("super").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "submarine" → "sub-" + "marine"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+    include="^sub-?......",
+)
+def en_sub(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L36093", "sub-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("sub").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "hypoactive" → "hypo-" + "active"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+    include="^hypo-?......",
+)
+def en_hypo(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L36100", "hypo-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("hypo").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "hypersonic" → "hyper-" + "sonic"
+# "hypertext" → "hyper-" + "text"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+    include="^hyper-?......",
+)
+def en_hyper(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L36098", "hyper-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("hyper").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
