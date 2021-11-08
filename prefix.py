@@ -1028,6 +1028,48 @@ def en_hyper(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.ADJ],
+    include="....ed$",
+)
+def en_ed(lexeme: Lexeme) -> Result:
+    parts = [
+        # "shattered" → "shatter" + "-ed"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ed"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB, LexicalCategory.NOUN],
+        )
+        # "stoned" → "stone" + "-ed"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ed") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB, LexicalCategory.NOUN],
+        ),
+        Lexeme("L23251", "-ed"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "spending" → "spend-" + "ing"
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.NOUN],
+    include="....ing$",
+)
+def en_ing(lexeme: Lexeme) -> Result:
+    parts = [
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("ing"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.VERB],
+        ),
+        Lexeme("L29623", "-ing"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
