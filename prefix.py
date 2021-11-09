@@ -1052,19 +1052,28 @@ def en_ed(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
-# "spending" → "spend-" + "ing"
 @task(
     language=Language.ENGLISH,
-    categories=[LexicalCategory.NOUN],
+    categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
     include="....ing$",
 )
 def en_ing(lexeme: Lexeme) -> Result:
-    parts = [
-        find_lexeme(
-            lemma=lexeme.lemma.removesuffix("ing"),
+    lemma = lexeme.lemma.removesuffix("ing")
+    # "spending" → "spend" + "-ing"
+    stem = find_lexeme(
+        lemma=lemma,
+        language=Language.ENGLISH,
+        categories=[LexicalCategory.VERB],
+    )
+    # "running" → "run" + "-ing"
+    if stem is None and lemma[-1] == lemma[-2]:
+        stem = find_lexeme(
+            lemma=lemma[:-1],
             language=Language.ENGLISH,
             categories=[LexicalCategory.VERB],
-        ),
+        )
+    parts = [
+        stem,
         Lexeme("L29623", "-ing"),
     ]
     return Result(lexeme=lexeme, parts=parts)
