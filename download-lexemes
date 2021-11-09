@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# SPDX-FileCopyrightText: 2021 Tuomas Siipola
+# SPDX-License-Identifier: MIT
+
+set -e
+
+mkdir -p data
+
+curl --silent --show-error -H "Accept: text/csv" -G https://query.wikidata.org/sparql --data-urlencode query="
+SELECT ?lexeme ?lemma ?lexicalCategory (LANG(?lemma) AS ?lang) WHERE {
+  ?lexeme dct:language wd:Q1860;
+    wikibase:lemma ?lemma;
+    wikibase:lexicalCategory ?lexicalCategory.
+}
+GROUP BY ?lexeme ?lemma ?lexicalCategory
+" | sed 's/\r$//' > data/lexemes-en.csv
+
+curl --silent --show-error -H "Accept: text/csv" -G https://query.wikidata.org/sparql --data-urlencode query="
+SELECT ?lexeme ?combines WHERE {
+  ?lexeme dct:language wd:Q1860;
+    wdt:P5238 ?combines.
+}
+GROUP BY ?lexeme ?combines
+" | sed 's/\r$//' > data/combines-en.csv
+
+curl --silent --show-error -H "Accept: text/csv" -G https://query.wikidata.org/sparql --data-urlencode query="
+SELECT ?lexeme ?lemma ?lexicalCategory (LANG(?lemma) AS ?lang) WHERE {
+  ?lexeme dct:language wd:Q9027;
+    wikibase:lemma ?lemma;
+    wikibase:lexicalCategory ?lexicalCategory.
+}
+GROUP BY ?lexeme ?lemma ?lexicalCategory
+" | sed 's/\r$//' > data/lexemes-sv.csv
+
+curl --silent --show-error -H "Accept: text/csv" -G https://query.wikidata.org/sparql --data-urlencode query="
+SELECT ?lexeme ?combines WHERE {
+  ?lexeme dct:language wd:Q9027;
+    wdt:P5238 ?combines.
+}
+GROUP BY ?lexeme ?combines
+" | sed 's/\r$//' > data/combines-sv.csv
