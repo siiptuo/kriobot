@@ -1079,6 +1079,32 @@ def en_ing(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+@task(
+    language=Language.ENGLISH,
+    categories=[LexicalCategory.VERB],
+    include="....en$",
+)
+def en_en(lexeme: Lexeme) -> Result:
+    parts = [
+        # "quicken" → "quick" + "-en"
+        # "strengthen" → "strength" + "-en"
+        find_lexeme(
+            lemma=lexeme.lemma.removesuffix("en"),
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        )
+        # "whiten" → "white" + "-en"
+        # "hasten" → "haste" + "-en"
+        or find_lexeme(
+            lemma=lexeme.lemma.removesuffix("en") + "e",
+            language=Language.ENGLISH,
+            categories=[LexicalCategory.NOUN, LexicalCategory.ADJ],
+        ),
+        Lexeme("L618779", "-en"),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
