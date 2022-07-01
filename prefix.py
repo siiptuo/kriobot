@@ -1105,6 +1105,63 @@ def en_en(lexeme: Lexeme) -> Result:
     return Result(lexeme=lexeme, parts=parts)
 
 
+# "multitask" → "multi-" + "task"
+@task(
+    language=Language.ENGLISH,
+    include="^multi....",
+    categories=[LexicalCategory.ADJ, LexicalCategory.NOUN, LexicalCategory.VERB],
+)
+def en_multi(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L14856", "multi-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("multi").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "monoculture" → "mono-" + "culture"
+@task(
+    language=Language.ENGLISH,
+    include="^mono....",
+    categories=[LexicalCategory.ADJ, LexicalCategory.NOUN, LexicalCategory.VERB],
+)
+def en_mono(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L11815", "mono-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("mono").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
+# "polytheism" → "poly-" + "theism"
+@task(
+    language=Language.ENGLISH,
+    include="^poly....",
+    categories=[LexicalCategory.ADJ, LexicalCategory.NOUN, LexicalCategory.VERB],
+)
+def en_poly(lexeme: Lexeme) -> Result:
+    assert lexeme.category is not None
+    parts = [
+        Lexeme("L680555", "poly-"),
+        find_lexeme(
+            lemma=lexeme.lemma.removeprefix("poly").removeprefix("-"),
+            language=Language.ENGLISH,
+            categories=[lexeme.category],
+        ),
+    ]
+    return Result(lexeme=lexeme, parts=parts)
+
+
 # "okänslig" → "o-" + "känslig"
 @task(language=Language.SWEDISH, categories=[LexicalCategory.ADJ], include="^o...")
 def sv_o(lexeme: Lexeme) -> Result:
